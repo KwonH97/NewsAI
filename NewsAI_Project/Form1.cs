@@ -109,8 +109,10 @@ namespace NewsAI_Project
                     {
                         this.Invoke(new Action(() => {
                             pnlResults.Controls.Clear(); // 기존 결과 삭제
+                            pnlResults.AutoScroll = true; // [추가] 뉴스 양이 많으면 스크롤 생성
 
-                            // 2. 반복문을 돌며 뉴스 아이템을 하나씩 생성합니다.
+                            int currentY = 10; // [추가] 뉴스가 배치될 세로 위치 시작점
+
                             foreach (var item in items)
                             {
                                 string title = item["title"]?.ToString()
@@ -119,12 +121,12 @@ namespace NewsAI_Project
                                     .Replace("<b>", "").Replace("</b>", "").Replace("&quot;", "\"") ?? "내용 없음";
                                 string link = item["link"]?.ToString() ?? "";
 
-                                // 1. 뉴스 하나를 담을 컨테이너 패널
+                                // 1. 뉴스 컨테이너 패널
                                 Panel newsItemPanel = new Panel();
-                                newsItemPanel.Size = new Size(pnlResults.Width - 50, 100); // 높이를 명시적으로 지정
-                                newsItemPanel.Margin = new Padding(10, 10, 10, 20);
-                                newsItemPanel.BorderStyle = BorderStyle.FixedSingle; // 영역 확인을 위해 테두리 추가
-                                newsItemPanel.BackColor = Color.FromArgb(245, 245, 245); // 연한 회색 배경
+                                newsItemPanel.Size = new Size(pnlResults.Width - 40, 100);
+                                newsItemPanel.Location = new Point(10, currentY); // [수정] currentY 위치에 배치
+                                newsItemPanel.BorderStyle = BorderStyle.FixedSingle;
+                                newsItemPanel.BackColor = Color.FromArgb(245, 245, 245);
 
                                 // 2. 제목 라벨
                                 Label lblTitle = new Label();
@@ -132,10 +134,9 @@ namespace NewsAI_Project
                                 lblTitle.Font = new Font("맑은 고딕", 11, FontStyle.Bold);
                                 lblTitle.ForeColor = Color.Blue;
                                 lblTitle.Cursor = Cursors.Hand;
-                                lblTitle.Location = new Point(10, 10); // 위치 직접 지정
+                                lblTitle.Location = new Point(10, 10);
                                 lblTitle.AutoSize = true;
                                 lblTitle.MaximumSize = new Size(newsItemPanel.Width - 20, 0);
-
                                 lblTitle.Click += (s, e) => {
                                     if (!string.IsNullOrEmpty(link))
                                         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = link, UseShellExecute = true });
@@ -145,16 +146,19 @@ namespace NewsAI_Project
                                 Label lblDesc = new Label();
                                 lblDesc.Text = "요약: " + description;
                                 lblDesc.Font = new Font("맑은 고딕", 9);
-                                lblDesc.Location = new Point(10, 40); // 제목 아래에 위치
+                                lblDesc.Location = new Point(10, 40);
                                 lblDesc.Size = new Size(newsItemPanel.Width - 20, 50);
-                                lblDesc.AutoEllipsis = true; // 내용이 길면 줄임표(...) 처리
+                                lblDesc.AutoEllipsis = true;
 
-                                // [중요!] 컨트롤 추가 순서와 BringToFront
+                                // 패널에 컨트롤 추가
                                 newsItemPanel.Controls.Add(lblTitle);
                                 newsItemPanel.Controls.Add(lblDesc);
 
-                                pnlResults.Controls.Add(newsItemPanel); // 최종 결과 패널에 추가
-                                newsItemPanel.BringToFront();
+                                // 결과 패널에 추가
+                                pnlResults.Controls.Add(newsItemPanel);
+
+                                // [핵심] 다음 뉴스가 그려질 위치 계산 (높이 100 + 간격 10)
+                                currentY += 110;
                             }
                         }));
                     
