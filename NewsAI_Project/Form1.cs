@@ -85,10 +85,11 @@ namespace NewsAI_Project
         private async Task SearchNaverNews(string stockName)
         {
             // 검색어 인코딩 (예: 삼성전자 주식 뉴스)
-            string query = WebUtility.UrlEncode(stockName + " 실적 호재 악재");
+            string geminiModel = "gemini-3-flash-preview";
+            string g_url = $"https://generativelanguage.googleapis.com/v1beta/models/{geminiModel}:generateContent?key={"AIzaSyA6GqZrYSRL682wG8i75aLFDBCOVi733V0"}";
 
-            // 최신순(date)으로 뉴스 1개를 가져오는 네이버 API 주소
-            string url = $"https://openapi.naver.com/v1/search/news.json?query={query}&display=10&sort=date";
+            string query = WebUtility.UrlEncode(stockName + " 주가 실적 호재 악재");
+            string n_url = $"https://openapi.naver.com/v1/search/news.json?query={query}&display=10&sort=date";
 
             using (HttpClient client = new HttpClient())
             {
@@ -99,7 +100,7 @@ namespace NewsAI_Project
                     client.DefaultRequestHeaders.Add("X-Naver-Client-Secret", clientSecret);
 
                     // 데이터를 가져옵니다.
-                    string responseBody = await client.GetStringAsync(url);
+                    string responseBody = await client.GetStringAsync(n_url);
                     JObject json = JObject.Parse(responseBody);
                     
 
