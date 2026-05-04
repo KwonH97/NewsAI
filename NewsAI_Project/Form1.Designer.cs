@@ -31,7 +31,6 @@
             pnlSearchBg = new Panel();
             txtStockSearch = new TextBox();
             lblTitle = new Label();
-            pnlResults = new FlowLayoutPanel();
             pnlSearchBg.SuspendLayout();
             SuspendLayout();
             // 
@@ -72,23 +71,11 @@
             lblTitle.TabIndex = 2;
             lblTitle.Text = "오늘의 궁금한 종목은?";
             // 
-            // pnlResults
-            // 
-            pnlResults.AutoScroll = true;
-            pnlResults.BackColor = Color.Transparent;
-            pnlResults.FlowDirection = FlowDirection.TopDown;
-            pnlResults.Location = new Point(109, 183);
-            pnlResults.Name = "pnlResults";
-            pnlResults.Size = new Size(600, 269);
-            pnlResults.TabIndex = 3;
-            pnlResults.WrapContents = false;
-            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1480, 810);
-            Controls.Add(pnlResults);
             Controls.Add(lblTitle);
             Controls.Add(pnlSearchBg);
             Name = "Form1";
@@ -105,6 +92,5 @@
         private Panel pnlSearchBg;
         private TextBox txtStockSearch;
         private Label lblTitle;
-        private FlowLayoutPanel pnlResults;
     }
 }

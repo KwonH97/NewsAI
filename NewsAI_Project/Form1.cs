@@ -1,10 +1,12 @@
 ﻿using Newtonsoft.Json.Linq;
 using Npgsql;
 using System;
+using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -14,41 +16,195 @@ namespace NewsAI_Project
     {
         [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
         private static extern IntPtr CreateRoundRectRgn(
-            int nLeftRect,     // x-coordinate of upper-left corner
-            int nTopRect,      // y-coordinate of upper-left corner
-            int nRightRect,    // x-coordinate of lower-right corner
-            int nBottomRect,   // y-coordinate of lower-right corner
-            int nWidthEllipse, // height of ellipse
-            int nHeightEllipse // width of ellipse
+            int nLeftRect, int nTopRect, int nRightRect, int nBottomRect, int nWidthEllipse, int nHeightEllipse
         );
-        // [수정] 네이버 개발자 센터에서 발급받은 본인의 ID와 Secret을 여기에 넣으세요.
+
+        // --- [설정 정보] ---
         private string clientId = "ezd6Ej_nSqMVHtWrspPR".Trim();
         private string clientSecret = "ZJTLFzujub".Trim();
+        private string accessToken = "";
+        private readonly string appKey = "PS3cORhXtubzXcNHC4l447c4l3GXhINDcb5P";
+        private readonly string appSecret = "dogOsk//DBT1z383vA/4aosMJ5ImdWEuhL8zPSe2md6uRHWTVoogemdeSqAZNZ9aln3BsXFa2PuIP5O8705Yjv0rPdGizh0CyOqC3KGEP1nqmweaosn34fGkL+aE8iv2cUK2TEGAcCg2VTzBKN2UxCYQqkQGGyufhDZIS/pXdFVDyqtIpIw=";
+        private readonly string domain = "https://openapivts.koreainvestment.com:29443";
+
+        // --- [레이아웃 패널 선언] ---
+        private Panel? pnlStockPrice;
+        private Panel? pnlResults; // 이제 코드로 생성할 것이므로 필드로 선언합니다.
+        private Panel? pnlNewsList;
 
         public Form1()
         {
             InitializeComponent();
+            this.Size = new Size(1250, 800);
             TestDBConnection();
             CreateTable();
         }
 
-        // --- [DB 관련 함수] ---
-
-        private void TestDBConnection()
+        // --- [메서드: 섹션 패널 생성] ---
+        private Panel CreateSectionPanel(int x, int y, int w, int h, string titleText)
         {
-            // 도커 포스트그레스 설정 (기존 유지)
-            string connString = "Host=localhost;Username=user123;Password=password123;Database=stock_news";
-            using (var conn = new NpgsqlConnection(connString))
+            Panel p = new Panel();
+            p.Location = new Point(x, y);
+            p.Size = new Size(w, h);
+            p.BackColor = Color.White;
+            p.BorderStyle = BorderStyle.FixedSingle;
+            p.AutoScroll = true;
+            p.Visible = false;
+
+            Label lbl = new Label();
+            lbl.Text = titleText;
+            lbl.Dock = DockStyle.Top;
+            lbl.Height = 40;
+            lbl.TextAlign = ContentAlignment.MiddleCenter;
+            lbl.BackColor = Color.FromArgb(245, 245, 245);
+            lbl.Font = new Font("맑은 고딕", 10, FontStyle.Bold);
+            lbl.AutoSize = false;
+
+            p.Controls.Add(lbl);
+            return p;
+        }
+
+        private async void Form1_Load(object sender, EventArgs e)
+        {
+            await GetAccessToken();
+
+            lblTitle.Left = (this.ClientSize.Width - lblTitle.Width) / 2;
+            pnlSearchBg.Left = (this.ClientSize.Width - pnlSearchBg.Width) / 2;
+            pnlSearchBg.Top = (this.ClientSize.Height - pnlSearchBg.Height) / 2 - 50;
+            lblTitle.Top = pnlSearchBg.Top - 60;
+
+            int spacing = 15;
+            int totalWidth = 1180;
+            int panelWidth = (totalWidth - (spacing * 2)) / 3;
+            int panelHeight = 450;
+            int startX = (this.ClientSize.Width - totalWidth) / 2;
+            int startY = 220;
+
+            // 1. 왼쪽: 실시간 시세 패널 생성
+            pnlStockPrice = CreateSectionPanel(startX, startY, panelWidth, panelHeight, "📊 실시간 시세");
+            this.Controls.Add(pnlStockPrice);
+
+            // 2. 가운데: AI 투자전략 패널 (코드로 동적 생성)
+            pnlResults = CreateSectionPanel(startX + panelWidth + spacing, startY, panelWidth, panelHeight, "🤖 AI 투자전략");
+            this.Controls.Add(pnlResults);
+
+            // 3. 오른쪽: 뉴스 리스트 패널 생성
+            pnlNewsList = CreateSectionPanel(startX + (panelWidth + spacing) * 2, startY, panelWidth, panelHeight, "📰 관련 뉴스");
+            this.Controls.Add(pnlNewsList);
+
+            pnlSearchBg.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, pnlSearchBg.Width, pnlSearchBg.Height, 25, 25));
+        }
+
+        private async void txtStockSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.SuppressKeyPress = true;
+                string stockName = txtStockSearch.Text.Trim();
+
+                if (!string.IsNullOrEmpty(stockName))
+                {
+                    lblTitle.Top = 30;
+                    pnlSearchBg.Top = 90;
+
+                    // 모든 패널을 보이게 설정
+                    if (pnlStockPrice != null) pnlStockPrice.Visible = true;
+                    if (pnlResults != null) pnlResults.Visible = true;
+                    if (pnlNewsList != null) pnlNewsList.Visible = true;
+
+                    await SearchNaverNews(stockName);
+                }
+            }
+        }
+
+        private async Task SearchNaverNews(string stockName)
+        {
+            string query = WebUtility.UrlEncode(stockName + " 실적 호재 악재");
+            string url = $"https://openapi.naver.com/v1/search/news.json?query={query}&display=10&sort=date";
+
+            using (HttpClient client = new HttpClient())
             {
                 try
                 {
-                    conn.Open();
-                    MessageBox.Show("DB 연결 성공!");
+                    client.DefaultRequestHeaders.Add("X-Naver-Client-Id", clientId);
+                    client.DefaultRequestHeaders.Add("X-Naver-Client-Secret", clientSecret);
+                    string responseBody = await client.GetStringAsync(url);
+                    JObject json = JObject.Parse(responseBody);
+                    var items = json["items"];
+
+                    this.Invoke(new Action(() =>
+                    {
+                        if (pnlNewsList != null)
+                        {
+                            pnlNewsList.Controls.Clear();
+                            Label lbl = new Label { Text = "📰 관련 뉴스", Dock = DockStyle.Top, Height = 40, TextAlign = ContentAlignment.MiddleCenter, BackColor = Color.FromArgb(245, 245, 245), Font = new Font("맑은 고딕", 10, FontStyle.Bold), AutoSize = false };
+                            pnlNewsList.Controls.Add(lbl);
+
+                            if (items != null && items.Any())
+                            {
+                                int currentY = 50;
+                                foreach (var item in items)
+                                {
+                                    string title = item["title"]?.ToString().Replace("<b>", "").Replace("</b>", "").Replace("&quot;", "\"") ?? "제목 없음";
+                                    string description = item["description"]?.ToString().Replace("<b>", "").Replace("</b>", "").Replace("&quot;", "\"") ?? "내용 없음";
+                                    string link = item["link"]?.ToString() ?? "";
+
+                                    Panel newsItemPanel = new Panel { Size = new Size(pnlNewsList.Width - 30, 100), Location = new Point(10, currentY), BackColor = Color.FromArgb(250, 250, 250) };
+                                    Label lblTitleItem = new Label { Text = "📌 " + title, Font = new Font("맑은 고딕", 9, FontStyle.Bold), ForeColor = Color.Blue, Cursor = Cursors.Hand, Location = new Point(5, 5), Size = new Size(newsItemPanel.Width - 10, 35) };
+                                    lblTitleItem.Click += (s, e) => { if (!string.IsNullOrEmpty(link)) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = link, UseShellExecute = true }); };
+                                    Label lblDesc = new Label { Text = description, Font = new Font("맑은 고딕", 8), Location = new Point(5, 40), Size = new Size(newsItemPanel.Width - 10, 50), AutoEllipsis = true };
+
+                                    newsItemPanel.Controls.Add(lblTitleItem);
+                                    newsItemPanel.Controls.Add(lblDesc);
+                                    pnlNewsList.Controls.Add(newsItemPanel);
+                                    currentY += 110;
+                                }
+                            }
+                        }
+                    }));
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("DB 연결 실패: " + ex.Message);
+                    MessageBox.Show("네이버 API 호출 실패: " + ex.Message);
+                    await Task.CompletedTask;
                 }
+            }
+        }
+
+        private async Task GetAccessToken()
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    string url = $"{domain}/oauth2/tokenP";
+                    var requestData = new { grant_type = "client_credentials", appkey = appKey, appsecret = appSecret };
+                    string json = Newtonsoft.Json.JsonConvert.SerializeObject(requestData);
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var response = await client.PostAsync(url, content);
+                    var result = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        JObject jo = JObject.Parse(result);
+                        accessToken = jo["access_token"]?.ToString() ?? string.Empty;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("한투 API 접속 오류: " + ex.Message);
+                await Task.CompletedTask;
+            }
+        }
+
+        private void TestDBConnection()
+        {
+            string connString = "Host=localhost;Username=user123;Password=password123;Database=stock_news";
+            using (var conn = new NpgsqlConnection(connString))
+            {
+                try { conn.Open(); }
+                catch (Exception ex) { MessageBox.Show("DB 연결 실패: " + ex.Message); }
             }
         }
 
@@ -68,171 +224,9 @@ namespace NewsAI_Project
                             ai_analysis TEXT,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                           );";
-                    using (var cmd = new NpgsqlCommand(sql, conn))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
+                    using (var cmd = new NpgsqlCommand(sql, conn)) { cmd.ExecuteNonQuery(); }
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("테이블 생성 실패: " + ex.Message);
-                }
-            }
-        }
-
-        // --- [네이버 뉴스 검색 함수] ---
-
-        private async Task SearchNaverNews(string stockName)
-        {
-            // 검색어 인코딩 (예: 삼성전자 주식 뉴스)
-            string query = WebUtility.UrlEncode(stockName + " 실적 호재 악재");
-
-            // 최신순(date)으로 뉴스 1개를 가져오는 네이버 API 주소
-            string url = $"https://openapi.naver.com/v1/search/news.json?query={query}&display=10&sort=date";
-
-            using (HttpClient client = new HttpClient())
-            {
-                try
-                {
-                    // 네이버 API 인증 헤더 추가 (매우 중요)
-                    client.DefaultRequestHeaders.Add("X-Naver-Client-Id", clientId);
-                    client.DefaultRequestHeaders.Add("X-Naver-Client-Secret", clientSecret);
-
-                    // 데이터를 가져옵니다.
-                    string responseBody = await client.GetStringAsync(url);
-                    JObject json = JObject.Parse(responseBody);
-                    
-
-
-                    var items = json["items"];
-                    if (items != null && items.Any())
-                    {
-                        this.Invoke(new Action(() => {
-                            pnlResults.Controls.Clear(); // 기존 결과 삭제
-                            pnlResults.AutoScroll = true; // [추가] 뉴스 양이 많으면 스크롤 생성
-
-                            int currentY = 10; // [추가] 뉴스가 배치될 세로 위치 시작점
-
-                            foreach (var item in items)
-                            {
-                                string title = item["title"]?.ToString()
-                                    .Replace("<b>", "").Replace("</b>", "").Replace("&quot;", "\"") ?? "제목 없음";
-                                string description = item["description"]?.ToString()
-                                    .Replace("<b>", "").Replace("</b>", "").Replace("&quot;", "\"") ?? "내용 없음";
-                                string link = item["link"]?.ToString() ?? "";
-
-                                // 1. 뉴스 컨테이너 패널
-                                Panel newsItemPanel = new Panel();
-                                newsItemPanel.Size = new Size(pnlResults.Width - 40, 100);
-                                newsItemPanel.Location = new Point(10, currentY); // [수정] currentY 위치에 배치
-                                newsItemPanel.BorderStyle = BorderStyle.FixedSingle;
-                                newsItemPanel.BackColor = Color.FromArgb(245, 245, 245);
-
-                                // 2. 제목 라벨
-                                Label lblTitle = new Label();
-                                lblTitle.Text = "📌 " + title;
-                                lblTitle.Font = new Font("맑은 고딕", 11, FontStyle.Bold);
-                                lblTitle.ForeColor = Color.Blue;
-                                lblTitle.Cursor = Cursors.Hand;
-                                lblTitle.Location = new Point(10, 10);
-                                lblTitle.AutoSize = true;
-                                lblTitle.MaximumSize = new Size(newsItemPanel.Width - 20, 0);
-                                lblTitle.Click += (s, e) => {
-                                    if (!string.IsNullOrEmpty(link))
-                                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = link, UseShellExecute = true });
-                                };
-
-                                // 3. 내용 라벨
-                                Label lblDesc = new Label();
-                                lblDesc.Text = "요약: " + description;
-                                lblDesc.Font = new Font("맑은 고딕", 9);
-                                lblDesc.Location = new Point(10, 40);
-                                lblDesc.Size = new Size(newsItemPanel.Width - 20, 50);
-                                lblDesc.AutoEllipsis = true;
-
-                                // 패널에 컨트롤 추가
-                                newsItemPanel.Controls.Add(lblTitle);
-                                newsItemPanel.Controls.Add(lblDesc);
-
-                                // 결과 패널에 추가
-                                pnlResults.Controls.Add(newsItemPanel);
-
-                                // [핵심] 다음 뉴스가 그려질 위치 계산 (높이 100 + 간격 10)
-                                currentY += 110;
-                            }
-                        }));
-                    
-
-                }
-                    else
-                    {
-                        MessageBox.Show("검색된 뉴스가 없습니다.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("네이버 API 호출 실패: " + ex.Message +
-                                    "\nID와 Secret 값이 정확한지 확인해 보세요.");
-                }
-            }
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-            AlignControls();
-
-            // 1. 먼저 검색창(패널)의 위치를 중앙으로 잡습니다.
-            pnlSearchBg.Left = (this.ClientSize.Width - pnlSearchBg.Width) / 2;
-            pnlSearchBg.Top = (this.ClientSize.Height - pnlSearchBg.Height) / 2 - 50;
-
-            // 2. 검색창 위치가 결정된 후, 제목(라벨) 위치를 잡습니다.
-            lblTitle.Left = (this.ClientSize.Width - lblTitle.Width) / 2;
-            lblTitle.Top = pnlSearchBg.Top - 50; // 50보다 조금 더 여유를 주는게 보기 좋습니다.
-
-            // 3. 결과창 위치를 검색창 바로 아래로 잡습니다.
-            pnlResults.Width = 800;
-            pnlResults.Height = 400;
-            pnlResults.Left = (this.ClientSize.Width - pnlResults.Width) / 2;
-            pnlResults.Top = pnlSearchBg.Bottom + 20;
-
-            // 4. 시각적 설정 (순서가 중요합니다)
-            lblTitle.Visible = true;
-            lblTitle.BringToFront();
-            pnlSearchBg.BackColor = Color.White;
-
-            // 5. [핵심] 모든 위치 계산이 끝난 후 마지막에 모서리를 깎습니다.
-            // 0, 0 좌표를 기준으로 패널의 너비와 높이만큼 정확히 깎아줍니다.
-            pnlSearchBg.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, pnlSearchBg.Width, pnlSearchBg.Height, 25, 25));
-        }
-        
-        private void AlignControls()
-        {
-            pnlSearchBg.Left = (this.ClientSize.Width - pnlSearchBg.Width) / 2;
-            pnlSearchBg.Top = (this.ClientSize.Height - pnlSearchBg.Height) / 2 - 100;
-
-            lblTitle.Left = (this.ClientSize.Width - lblTitle.Width) / 2;
-            lblTitle.Top = pnlSearchBg.Top - 60;
-        }
-
-        private async void txtStockSearch_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Enter)
-            {
-                e.SuppressKeyPress = true;
-
-                lblTitle.Top = 50;
-                pnlSearchBg.Top = 110;
-                pnlResults.Top = pnlSearchBg.Bottom + 30;
-
-                string stockName = txtStockSearch.Text.Trim();
-
-                if (!string.IsNullOrEmpty(stockName))
-                {
-                    pnlResults.BringToFront();
-                    // 이제 await를 정상적으로 사용할 수 있습니다.
-                    await SearchNaverNews(stockName);
-                }
+                catch (Exception ex) { MessageBox.Show("테이블 생성 실패: " + ex.Message); }
             }
         }
     }
