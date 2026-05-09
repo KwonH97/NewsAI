@@ -28,56 +28,6 @@ namespace NewsAI_Project
         public Form1()
         {
             InitializeComponent();
-            TestDBConnection();
-            CreateTable();
-        }
-
-        // --- [DB 관련 함수] ---
-
-        private void TestDBConnection()
-        {
-            // 도커 포스트그레스 설정 (기존 유지)
-            string connString = "Host=localhost;Username=user123;Password=password123;Database=stock_news";
-            using (var conn = new NpgsqlConnection(connString))
-            {
-                try
-                {
-                    conn.Open();
-                    MessageBox.Show("DB 연결 성공!");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("DB 연결 실패: " + ex.Message);
-                }
-            }
-        }
-
-        private void CreateTable()
-        {
-            string connString = "Host=localhost;Username=user123;Password=password123;Database=stock_news";
-            using (var conn = new NpgsqlConnection(connString))
-            {
-                try
-                {
-                    conn.Open();
-                    string sql = @"CREATE TABLE IF NOT EXISTS News (
-                            id SERIAL PRIMARY KEY,
-                            title TEXT,
-                            content TEXT,
-                            ai_score INT,
-                            ai_analysis TEXT,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                          );";
-                    using (var cmd = new NpgsqlCommand(sql, conn))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("테이블 생성 실패: " + ex.Message);
-                }
-            }
         }
 
         // --- [네이버 뉴스 검색 함수] ---
