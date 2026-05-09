@@ -361,3 +361,16 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# PostgreSQL 데이터 폴더 제외
+**/postgres_data/
+
+# 비주얼 스튜디오 임시 파일 및 빌드 결과물 제외
+*.user
+*.userosscache
+*.sln.docstates
+Debug/
+Release/
+bin/
+obj/
+.vs/
