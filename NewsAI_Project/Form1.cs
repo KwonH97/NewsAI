@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Npgsql;
 using System;
 using System.Linq;
@@ -21,9 +22,6 @@ namespace NewsAI_Project
             int nWidthEllipse, // height of ellipse
             int nHeightEllipse // width of ellipse
         );
-        // [수정] 네이버 개발자 센터에서 발급받은 본인의 ID와 Secret을 여기에 넣으세요.
-        private string clientId = "ezd6Ej_nSqMVHtWrspPR".Trim();
-        private string clientSecret = "ZJTLFzujub".Trim();
 
         public Form1()
         {
@@ -35,9 +33,6 @@ namespace NewsAI_Project
         private async Task SearchNaverNews(string stockName)
         {
             // 검색어 인코딩 (예: 삼성전자 주식 뉴스)
-            string geminiModel = "gemini-3-flash-preview";
-            string g_url = $"https://generativelanguage.googleapis.com/v1beta/models/{geminiModel}:generateContent?key={"AIzaSyA6GqZrYSRL682wG8i75aLFDBCOVi733V0"}";
-
             string query = WebUtility.UrlEncode(stockName + " 주가 실적 호재 악재");
             string n_url = $"https://openapi.naver.com/v1/search/news.json?query={query}&display=10&sort=date";
 
@@ -46,19 +41,31 @@ namespace NewsAI_Project
                 try
                 {
                     // 네이버 API 인증 헤더 추가 (매우 중요)
-                    client.DefaultRequestHeaders.Add("X-Naver-Client-Id", clientId);
-                    client.DefaultRequestHeaders.Add("X-Naver-Client-Secret", clientSecret);
+                    client.DefaultRequestHeaders.Add("X-Naver-Client-Id", Config.NaverId);
+                    client.DefaultRequestHeaders.Add("X-Naver-Client-Secret", Config.NaverSecret);
 
                     // 데이터를 가져옵니다.
                     string responseBody = await client.GetStringAsync(n_url);
                     JObject json = JObject.Parse(responseBody);
-                    
-
-
                     var items = json["items"];
+
                     if (items != null && items.Any())
                     {
+                        // [추가된 로직 1] 모든 뉴스 제목과 내용을 하나로 합칩니다.
+                        string allNewsText = "";
+                        foreach (var item in items)
+                        {
+                            string title = item["title"]?.ToString().Replace("<b>", "").Replace("</b>", "") ?? "";
+                            string desc = item["description"]?.ToString().Replace("<b>", "").Replace("</b>", "") ?? "";
+                            allNewsText += $"[제목]: {title}\n[내용]: {desc}\n\n";
+                        }
+
+                        // [추가된 로직 2] 제미나이에게 분석을 요청합니다.
+                        string aiAnalysisResult = await GetGeminiAnalysis(allNewsText);
+
+                        // [추가된 로직 3] UI에 표시 (기존 뉴스 리스트 출력 전이나 후에)
                         this.Invoke(new Action(() => {
+                            MessageBox.Show("🤖 AI 분석 결과:\n\n" + aiAnalysisResult);
                             pnlResults.Controls.Clear(); // 기존 결과 삭제
                             pnlResults.AutoScroll = true; // [추가] 뉴스 양이 많으면 스크롤 생성
 
@@ -125,6 +132,44 @@ namespace NewsAI_Project
                     MessageBox.Show("네이버 API 호출 실패: " + ex.Message +
                                     "\nID와 Secret 값이 정확한지 확인해 보세요.");
                 }
+            }
+        }
+        
+        // 제미나이 api
+        private async Task<string> GetGeminiAnalysis(string newsContext)
+        {
+            try
+            {
+                // 1. 설정 (현님의 키와 원하는 모델명으로 교체)
+                
+                string model = "gemini-3.1-flash-lite";
+                string g_url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={Config.GeminiKey}";
+
+                // 2. 요청 바디 구성 (JSON)
+                var requestBody = new
+                {
+                    contents = new[]
+                    {
+                new { parts = new[] { new { text = $"너는 주식 분석 전문가야. 다음 뉴스들을 읽고 주가에 영향이 큰 핵심 내용만 3줄 요약해줘:\n\n{newsContext}" } } }
+                    }
+                };
+
+                using (HttpClient client = new HttpClient())
+                {
+                    string jsonPayload = JsonConvert.SerializeObject(requestBody);
+                    var content = new StringContent(jsonPayload, System.Text.Encoding.UTF8, "application/json");
+
+                    var response = await client.PostAsync(g_url, content);
+                    var responseBody = await response.Content.ReadAsStringAsync();
+
+                    JObject json = JObject.Parse(responseBody);
+                    // 제미나이의 답변 텍스트 추출
+                    return json["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString() ?? "분석 결과가 없습니다.";
+                }
+            }
+            catch (Exception ex)
+            {
+                return "AI 분석 중 오류 발생: " + ex.Message;
             }
         }
 
