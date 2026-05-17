@@ -42,7 +42,7 @@ namespace NewsAI_Project.Services
                 {
                     Title = CleanNewsText(item["title"]?.ToString() ?? "제목 없음"),
                     Description = CleanNewsText(item["description"]?.ToString() ?? "내용 없음"),
-                    Link = item["link"]?.ToString() ?? "",
+                    Link = item["originallink"]?.ToString() ?? item["link"]?.ToString() ?? "",
                     SourceName = "Naver News",
                     SourceType = NewsSourceType.News,
                     PublishedAt = ParsePublishedAt(item["pubDate"]?.ToString())
@@ -54,10 +54,10 @@ namespace NewsAI_Project.Services
 
         private static string CleanNewsText(string text)
         {
-            return text
+            return WebUtility.HtmlDecode(text)
                 .Replace("<b>", "")
                 .Replace("</b>", "")
-                .Replace("&quot;", "\"");
+                .Trim();
         }
 
         private static DateTime? ParsePublishedAt(string? pubDate)

@@ -1,9 +1,6 @@
 using NewsAI_Project.Models;
 using NewsAI_Project.Services;
-using System;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace NewsAI_Project
 {
@@ -11,12 +8,12 @@ namespace NewsAI_Project
     {
         [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
         private static extern IntPtr CreateRoundRectRgn(
-            int nLeftRect,     // x-coordinate of upper-left corner
-            int nTopRect,      // y-coordinate of upper-left corner
-            int nRightRect,    // x-coordinate of lower-right corner
-            int nBottomRect,   // y-coordinate of lower-right corner
-            int nWidthEllipse, // height of ellipse
-            int nHeightEllipse // width of ellipse
+            int nLeftRect,
+            int nTopRect,
+            int nRightRect,
+            int nBottomRect,
+            int nWidthEllipse,
+            int nHeightEllipse
         );
 
         public Form1()
@@ -28,21 +25,26 @@ namespace NewsAI_Project
         {
             try
             {
+                pnlResults.Controls.Clear();
+                pnlResults.Controls.Add(CreateTextPanel("분석 중입니다. 뉴스를 수집하고 기사 신뢰도를 계산하고 있습니다.", 70));
+
                 NaverNewsProvider naverNewsProvider = new NaverNewsProvider(Config.NaverId ?? "", Config.NaverSecret ?? "");
                 GeminiAnalysisService geminiAnalysisService = new GeminiAnalysisService(Config.GeminiKey ?? "");
+                ReliabilityScorer reliabilityScorer = new ReliabilityScorer();
 
                 List<NewsItem> newsItems = await naverNewsProvider.SearchAsync(stockName);
 
                 if (newsItems.Count == 0)
                 {
-                    MessageBox.Show("검색된 뉴스가 없습니다.");
+                    pnlResults.Controls.Clear();
+                    pnlResults.Controls.Add(CreateTextPanel("검색된 뉴스가 없습니다.", 70));
                     return;
                 }
 
-                string aiAnalysisResult = await geminiAnalysisService.AnalyzeAsync(newsItems);
+                NewsAnalysisResult analysisResult = await geminiAnalysisService.AnalyzeAsync(newsItems);
+                OverallAnalysisResult scoredResult = reliabilityScorer.Score(newsItems, analysisResult);
 
-                MessageBox.Show("🤖 AI 분석 결과:\n\n" + aiAnalysisResult);
-                ShowNewsItems(newsItems);
+                ShowAnalysisResult(scoredResult);
             }
             catch (Exception ex)
             {
@@ -51,87 +53,213 @@ namespace NewsAI_Project
             }
         }
 
-        private void ShowNewsItems(List<NewsItem> newsItems)
+        private void ShowAnalysisResult(OverallAnalysisResult result)
         {
             pnlResults.Controls.Clear();
             pnlResults.AutoScroll = true;
 
-            int currentY = 10;
+            pnlResults.Controls.Add(CreateSummaryPanel(result));
 
-            foreach (NewsItem item in newsItems)
+            foreach (ScoredArticleResult article in result.Articles)
             {
-                Panel newsItemPanel = new Panel();
-                newsItemPanel.Size = new Size(pnlResults.Width - 40, 100);
-                newsItemPanel.Location = new Point(10, currentY);
-                newsItemPanel.BorderStyle = BorderStyle.FixedSingle;
-                newsItemPanel.BackColor = Color.FromArgb(245, 245, 245);
-
-                Label lblTitle = new Label();
-                lblTitle.Text = "📌 " + item.Title;
-                lblTitle.Font = new Font("맑은 고딕", 11, FontStyle.Bold);
-                lblTitle.ForeColor = Color.Blue;
-                lblTitle.Cursor = Cursors.Hand;
-                lblTitle.Location = new Point(10, 10);
-                lblTitle.AutoSize = true;
-                lblTitle.MaximumSize = new Size(newsItemPanel.Width - 20, 0);
-                lblTitle.Click += (s, e) =>
-                {
-                    if (!string.IsNullOrEmpty(item.Link))
-                    {
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = item.Link, UseShellExecute = true });
-                    }
-                };
-
-                Label lblDesc = new Label();
-                lblDesc.Text = "요약: " + item.Description;
-                lblDesc.Font = new Font("맑은 고딕", 9);
-                lblDesc.Location = new Point(10, 40);
-                lblDesc.Size = new Size(newsItemPanel.Width - 20, 50);
-                lblDesc.AutoEllipsis = true;
-
-                newsItemPanel.Controls.Add(lblTitle);
-                newsItemPanel.Controls.Add(lblDesc);
-                pnlResults.Controls.Add(newsItemPanel);
-
-                currentY += 110;
+                pnlResults.Controls.Add(CreateArticlePanel(article));
             }
+        }
+
+        private Panel CreateSummaryPanel(OverallAnalysisResult result)
+        {
+            Panel panel = new Panel
+            {
+                Width = pnlResults.Width - 40,
+                Height = 130,
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Color.FromArgb(235, 242, 255),
+                Margin = new Padding(10)
+            };
+
+            Label title = new Label
+            {
+                Text = $"종합 판단: {result.Decision}",
+                Font = new Font("맑은 고딕", 13, FontStyle.Bold),
+                Location = new Point(12, 10),
+                AutoSize = true
+            };
+
+            Label score = new Label
+            {
+                Text = $"총 영향 점수: {result.TotalImpactScore:F1} / 평균 신뢰도: {result.AverageReliabilityScore:F1}점",
+                Font = new Font("맑은 고딕", 10, FontStyle.Regular),
+                Location = new Point(12, 45),
+                AutoSize = true
+            };
+
+            Label summary = new Label
+            {
+                Text = string.IsNullOrWhiteSpace(result.Summary) ? "전체 요약이 없습니다." : result.Summary,
+                Font = new Font("맑은 고딕", 9, FontStyle.Regular),
+                Location = new Point(12, 75),
+                Size = new Size(panel.Width - 24, 45),
+                AutoEllipsis = true
+            };
+
+            panel.Controls.Add(title);
+            panel.Controls.Add(score);
+            panel.Controls.Add(summary);
+
+            return panel;
+        }
+
+        private Panel CreateArticlePanel(ScoredArticleResult article)
+        {
+            Panel panel = new Panel
+            {
+                Width = pnlResults.Width - 40,
+                Height = 170,
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Color.FromArgb(245, 245, 245),
+                Margin = new Padding(10)
+            };
+
+            Label title = new Label
+            {
+                Text = article.NewsItem.Title,
+                Font = new Font("맑은 고딕", 11, FontStyle.Bold),
+                ForeColor = Color.Blue,
+                Cursor = Cursors.Hand,
+                Location = new Point(10, 10),
+                AutoSize = true,
+                MaximumSize = new Size(panel.Width - 20, 0)
+            };
+            title.Click += (s, e) =>
+            {
+                if (!string.IsNullOrEmpty(article.NewsItem.Link))
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = article.NewsItem.Link,
+                        UseShellExecute = true
+                    });
+                }
+            };
+
+            Label score = new Label
+            {
+                Text = $"신뢰도 {article.ReliabilityScore}점 / 영향 {article.ImpactScore:F1} / {ToKoreanDirection(article.Analysis.ImpactDirection)} / 강도 {ToKoreanStrength(article.Analysis.ImpactStrength)}",
+                Font = new Font("맑은 고딕", 9, FontStyle.Bold),
+                Location = new Point(10, 48),
+                AutoSize = true
+            };
+
+            Label detail = new Label
+            {
+                Text = $"점수 근거: 출처 {article.SourceScore}, 공식성 {article.OfficialityScore}, 구체성 {article.SpecificityScore}, 중복확인 {article.DuplicateScore}, 감점 {article.PenaltyScore}",
+                Font = new Font("맑은 고딕", 8, FontStyle.Regular),
+                Location = new Point(10, 73),
+                AutoSize = true
+            };
+
+            Label summary = new Label
+            {
+                Text = "요약: " + article.Analysis.Summary,
+                Font = new Font("맑은 고딕", 9, FontStyle.Regular),
+                Location = new Point(10, 98),
+                Size = new Size(panel.Width - 20, 38),
+                AutoEllipsis = true
+            };
+
+            string claimsText = article.Analysis.Claims.Count == 0
+                ? "핵심 주장: 없음"
+                : "핵심 주장: " + string.Join(", ", article.Analysis.Claims.Take(3));
+
+            Label claims = new Label
+            {
+                Text = claimsText,
+                Font = new Font("맑은 고딕", 8, FontStyle.Regular),
+                Location = new Point(10, 140),
+                Size = new Size(panel.Width - 20, 25),
+                AutoEllipsis = true
+            };
+
+            panel.Controls.Add(title);
+            panel.Controls.Add(score);
+            panel.Controls.Add(detail);
+            panel.Controls.Add(summary);
+            panel.Controls.Add(claims);
+
+            return panel;
+        }
+
+        private Panel CreateTextPanel(string text, int height)
+        {
+            Panel panel = new Panel
+            {
+                Width = pnlResults.Width - 40,
+                Height = height,
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Color.FromArgb(245, 245, 245),
+                Margin = new Padding(10)
+            };
+
+            Label label = new Label
+            {
+                Text = text,
+                Font = new Font("맑은 고딕", 10, FontStyle.Regular),
+                Location = new Point(12, 18),
+                AutoSize = true
+            };
+
+            panel.Controls.Add(label);
+            return panel;
+        }
+
+        private static string ToKoreanDirection(string direction)
+        {
+            return direction.Trim().ToLowerInvariant() switch
+            {
+                "positive" => "호재",
+                "negative" => "악재",
+                _ => "중립"
+            };
+        }
+
+        private static string ToKoreanStrength(string strength)
+        {
+            return strength.Trim().ToLowerInvariant() switch
+            {
+                "strong" => "강함",
+                "medium" => "보통",
+                _ => "약함"
+            };
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
             AlignControls();
 
-            // 1. 먼저 검색창(패널)의 위치를 중앙으로 잡습니다.
-            pnlSearchBg.Left = (this.ClientSize.Width - pnlSearchBg.Width) / 2;
-            pnlSearchBg.Top = (this.ClientSize.Height - pnlSearchBg.Height) / 2 - 50;
+            pnlSearchBg.Left = (ClientSize.Width - pnlSearchBg.Width) / 2;
+            pnlSearchBg.Top = (ClientSize.Height - pnlSearchBg.Height) / 2 - 50;
 
-            // 2. 검색창 위치가 결정된 후, 제목(라벨) 위치를 잡습니다.
-            lblTitle.Left = (this.ClientSize.Width - lblTitle.Width) / 2;
-            lblTitle.Top = pnlSearchBg.Top - 50; // 50보다 조금 더 여유를 주는게 보기 좋습니다.
+            lblTitle.Left = (ClientSize.Width - lblTitle.Width) / 2;
+            lblTitle.Top = pnlSearchBg.Top - 50;
 
-            // 3. 결과창 위치를 검색창 바로 아래로 잡습니다.
-            pnlResults.Width = 800;
-            pnlResults.Height = 400;
-            pnlResults.Left = (this.ClientSize.Width - pnlResults.Width) / 2;
+            pnlResults.Width = 900;
+            pnlResults.Height = 560;
+            pnlResults.Left = (ClientSize.Width - pnlResults.Width) / 2;
             pnlResults.Top = pnlSearchBg.Bottom + 20;
 
-            // 4. 시각적 설정 (순서가 중요합니다)
             lblTitle.Visible = true;
             lblTitle.BringToFront();
             pnlSearchBg.BackColor = Color.White;
 
-            // 5. [핵심] 모든 위치 계산이 끝난 후 마지막에 모서리를 깎습니다.
-            // 0, 0 좌표를 기준으로 패널의 너비와 높이만큼 정확히 깎아줍니다.
-            pnlSearchBg.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, pnlSearchBg.Width, pnlSearchBg.Height, 25, 25));
+            pnlSearchBg.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, pnlSearchBg.Width, pnlSearchBg.Height, 25, 25));
         }
 
         private void AlignControls()
         {
-            pnlSearchBg.Left = (this.ClientSize.Width - pnlSearchBg.Width) / 2;
-            pnlSearchBg.Top = (this.ClientSize.Height - pnlSearchBg.Height) / 2 - 100;
+            pnlSearchBg.Left = (ClientSize.Width - pnlSearchBg.Width) / 2;
+            pnlSearchBg.Top = (ClientSize.Height - pnlSearchBg.Height) / 2 - 100;
 
-            lblTitle.Left = (this.ClientSize.Width - lblTitle.Width) / 2;
+            lblTitle.Left = (ClientSize.Width - lblTitle.Width) / 2;
             lblTitle.Top = pnlSearchBg.Top - 60;
         }
 
