@@ -65,36 +65,195 @@ namespace NewsAI_Project.Services
         private static string CreatePrompt(string newsContext)
         {
             return """
-You are a stock-news analysis assistant.
-Use only the news list below. Do not invent facts that are not present in the news.
-Analyze each article for claims, market impact, officiality, specificity, hype expressions, and title/content mismatch.
-Write Korean text inside summary, claims, and reason fields.
+You are a professional stock market news analysis assistant.
 
-Return only valid JSON. Do not include markdown fences, comments, or explanations.
+Use only the news articles provided below.
+Do not invent facts that are not explicitly mentioned in the articles.
+
+Analyze each article and determine:
+
+* summary
+* claims
+* claim keywords
+* stock impact direction
+* stock impact strength
+* officiality level
+* specificity level
+* market reaction speed
+* market impact range
+* expected stock price impact score
+* hype expressions
+* title/content mismatch
+* reasoning
+
+Write summary, claims and reason in Korean.
+
+Return ONLY valid JSON.
+
+Do not return markdown.
+Do not return explanations.
+Do not return comments.
+
+Definitions:
+
+impactDirection
+
+positive = 호재
+negative = 악재
+neutral = 중립
+
+impactStrength
+
+strong = 매우 강한 영향
+medium = 보통 영향
+weak = 약한 영향
+
+marketReactionSpeed
+
+Return EXACTLY one of:
+
+Low
+Medium
+High
+Critical
+
+Critical
+= 즉시 확인 필요
+
+High
+= 장중 확인 필요
+
+Medium
+= 오늘 중 확인
+
+Low
+= 당장 볼 필요 없음
+
+marketImpactRange
+
+Return EXACTLY one of:
+
+Company
+Sector
+Market
+
+Company
+= 해당 기업만 영향
+
+Sector
+= 업종 전체 영향
+
+Market
+= 시장 전체 영향
+
+priceImpactScore
+
+0~20
+주가 영향 거의 없음
+
+21~40
+약한 영향
+
+41~60
+보통 영향
+
+61~80
+강한 영향
+
+81~100
+매우 강한 영향
+
+Examples of high scores:
+
+* 유상증자
+* 감자
+* 거래정지
+* 상장폐지
+* FDA 승인
+* 대규모 수주
+* 실적 쇼크
+* 대규모 투자
+* 핵심 기술 계약
+
+officialityLevel
+
+official_disclosure
+= DART 공시
+
+contract_or_earnings
+= 수주 또는 실적
+
+company_quote
+= 회사 공식 발표
+
+industry_forecast
+= 산업 전망
+
+analyst_forecast
+= 증권사 전망
+
+speculation
+= 추측성 기사
 
 Required JSON schema:
+
 {
-  "overallSummary": "2-sentence Korean summary of the overall news flow",
-  "articles": [
-    {
-      "articleIndex": 0,
-      "summary": "Korean article summary",
-      "claims": ["Korean core claim"],
-      "claimKeywords": ["short duplicate-check keyword"],
-      "impactDirection": "positive | negative | neutral",
-      "impactStrength": "strong | medium | weak",
-      "officialityLevel": "official_disclosure | contract_or_earnings | company_quote | industry_forecast | analyst_forecast | speculation",
-      "specificityLevel": "high | medium | low",
-      "hasHypeExpression": false,
-      "titleContentMismatch": false,
-      "reason": "Korean reason"
-    }
-  ]
+"overallSummary": "전체 뉴스 흐름 요약",
+
+"articles": [
+{
+"articleIndex": 0,
+
+  "summary": "기사 요약",
+
+  "claims": [
+    "핵심 주장"
+  ],
+
+  "claimKeywords": [
+    "키워드"
+  ],
+
+  "impactDirection":
+  "positive | negative | neutral",
+
+  "impactStrength":
+  "strong | medium | weak",
+
+  "officialityLevel":
+  "official_disclosure | contract_or_earnings | company_quote | industry_forecast | analyst_forecast | speculation",
+
+  "specificityLevel":
+  "high | medium | low",
+
+  "marketReactionSpeed":
+  "Low | Medium | High | Critical",
+
+  "marketImpactRange":
+  "Company | Sector | Market",
+
+  "priceImpactScore":
+  0,
+
+  "hasHypeExpression":
+  false,
+
+  "titleContentMismatch":
+  false,
+
+  "reason":
+  "판단 근거"
+}
+
+]
 }
 
 News list:
+
 """ + newsContext;
         }
+
+
 
         private static string CreateNewsContext(List<NewsItem> newsItems)
         {
