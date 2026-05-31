@@ -18,6 +18,7 @@ namespace NewsAI_Project
                     Config.GeminiKey = loginForm.GeminiKey;
                     Config.NaverId = loginForm.NaverId;
                     Config.NaverSecret = loginForm.NaverSecret;
+                    Config.DartKey = loginForm.DartKey;
 
                     Application.Run(new Form1());
                 }
@@ -34,5 +35,6 @@ namespace NewsAI_Project
         public static string? GeminiKey { get; set; }
         public static string? NaverId { get; set; }
         public static string? NaverSecret { get; set; }
+        public static string? DartKey { get; set; }
     }
 }

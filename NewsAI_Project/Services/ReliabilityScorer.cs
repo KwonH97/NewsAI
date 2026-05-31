@@ -4,21 +4,60 @@ namespace NewsAI_Project.Services
 {
     public class ReliabilityScorer
     {
-        public OverallAnalysisResult Score(List<NewsItem> newsItems, NewsAnalysisResult analysisResult)
+        public OverallAnalysisResult Score(List<NewsItem> newsItems, NewsAnalysisResult analysisResult, List<DartDisclosure> disclosures)
         {
             Dictionary<string, int> keywordCounts = CountClaimKeywords(analysisResult.Articles);
             List<ScoredArticleResult> scoredArticles = new List<ScoredArticleResult>();
 
             for (int i = 0; i < newsItems.Count; i++)
             {
-                ArticleAnalysisResult articleAnalysis = FindAnalysisForArticle(analysisResult.Articles, i);
-                int sourceScore = GetSourceScore(newsItems[i].SourceType);
-                int officialityScore = GetOfficialityScore(articleAnalysis.OfficialityLevel);
-                int specificityScore = GetSpecificityScore(articleAnalysis.SpecificityLevel);
-                int duplicateScore = GetDuplicateScore(articleAnalysis.ClaimKeywords, keywordCounts);
-                int penaltyScore = GetPenaltyScore(articleAnalysis);
-                int reliabilityScore = Clamp(sourceScore + officialityScore + specificityScore + duplicateScore - penaltyScore, 0, 100);
-                double impactScore = reliabilityScore * GetDirectionMultiplier(articleAnalysis.ImpactDirection) * GetStrengthMultiplier(articleAnalysis.ImpactStrength);
+                ArticleAnalysisResult articleAnalysis =
+                    FindAnalysisForArticle(
+                        analysisResult.Articles,
+                        i);
+
+                int sourceScore =
+                    GetSourceScore(newsItems[i].SourceType);
+
+                int officialityScore =
+                    GetOfficialityScore(
+                        articleAnalysis.OfficialityLevel);
+
+                int specificityScore =
+                    GetSpecificityScore(
+                        articleAnalysis.SpecificityLevel);
+
+                int duplicateScore =
+                    GetDuplicateScore(
+                        articleAnalysis.ClaimKeywords,
+                        keywordCounts);
+
+                int penaltyScore =
+                    GetPenaltyScore(articleAnalysis);
+
+                int dartScore =
+                    GetDartScore(
+                        newsItems[i].Title,
+                        disclosures);
+
+
+                int reliabilityScore =
+                    Clamp(
+                        sourceScore +
+                        officialityScore +
+                        specificityScore +
+                        duplicateScore +
+                        dartScore -
+                        penaltyScore,
+                        0,
+                        100);
+
+                double impactScore =
+                    reliabilityScore *
+                    GetDirectionMultiplier(
+                        articleAnalysis.ImpactDirection) *
+                    GetStrengthMultiplier(
+                        articleAnalysis.ImpactStrength);
 
                 scoredArticles.Add(new ScoredArticleResult
                 {
@@ -72,11 +111,20 @@ namespace NewsAI_Project.Services
         {
             return sourceType switch
             {
-                NewsSourceType.Disclosure => 40,
-                NewsSourceType.CompanyOfficial => 40,
-                NewsSourceType.News => 20,
+                NewsSourceType.Disclosure => 40,          // DART
+
+                NewsSourceType.FinancialAuthority => 35,  // 금융감독원
+
+                NewsSourceType.EconomicNews => 30,        // 경제지
+
+                NewsSourceType.CompanyOfficial => 25,     // 기업 IR
+
+                NewsSourceType.News => 20,                // 일반 뉴스
+
                 NewsSourceType.Blog => 5,
+
                 NewsSourceType.Community => 5,
+
                 _ => 5
             };
         }
@@ -190,9 +238,57 @@ namespace NewsAI_Project.Services
             return "판단 보류";
         }
 
+
+
         private static int Clamp(int value, int min, int max)
         {
             return Math.Min(max, Math.Max(min, value));
+        }
+
+        private static int GetDartScore(
+    string newsTitle,
+    List<DartDisclosure> disclosures)
+        {
+            string title =
+                newsTitle.ToLower();
+
+            foreach (var disclosure in disclosures)
+            {
+                string report =
+                    disclosure.ReportName.ToLower();
+                
+
+                // 자사주
+                if (title.Contains("자사주") &&
+                    report.Contains("자기주식"))
+                    return 20;
+
+                // 실적
+                if ((title.Contains("실적") ||
+                     title.Contains("영업이익") ||
+                     title.Contains("매출")) &&
+                    (report.Contains("사업보고서") ||
+                     report.Contains("반기보고서") ||
+                     report.Contains("분기보고서")))
+                    return 20;
+
+                // 공급계약
+                if (title.Contains("계약") &&
+                    report.Contains("공급계약"))
+                    return 20;
+
+                // 투자
+                if (title.Contains("투자") &&
+                    report.Contains("투자"))
+                    return 20;
+
+                // 증자
+                if (title.Contains("증자") &&
+                    report.Contains("유상증자"))
+                    return 20;
+            }
+
+            return 0;
         }
 
         private static string NormalizeKeyword(string? value)

@@ -15,6 +15,7 @@ namespace NewsAI_Project
         public string? GeminiKey { get; private set; }
         public string? NaverId { get; private set; }
         public string? NaverSecret { get; private set; }
+        public string? DartKey { get; private set; }
 
         public ApiKeyInputForm()
         {
@@ -41,10 +42,13 @@ namespace NewsAI_Project
             this.GeminiKey = txtGeminiKey.Text.Trim();
             this.NaverId = txtNaverId.Text.Trim();
             this.NaverSecret = txtNaverSecret.Text.Trim();
+            this.DartKey = txtDartKey.Text.Trim();
 
             // 3. 결과 성공(OK)을 알리고 창 닫기
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
+
+        
     }
 }
