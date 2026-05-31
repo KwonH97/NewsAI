@@ -62,19 +62,32 @@ namespace NewsAI_Project.Services
                 scoredArticles.Add(new ScoredArticleResult
                 {
                     NewsItem = newsItems[i],
+
                     Analysis = articleAnalysis,
-                    SourceScore = sourceScore,
-                    OfficialityScore = officialityScore,
-                    SpecificityScore = specificityScore,
-                    DuplicateScore = duplicateScore,
-                    PenaltyScore = penaltyScore,
-                    ReliabilityScore = reliabilityScore,
+
+                    Reliability = new ReliabilityBreakdown
+                    {
+                        SourceScore = sourceScore,
+
+                        OfficialityScore = officialityScore,
+
+                        SpecificityScore = specificityScore,
+
+                        DuplicateScore = duplicateScore,
+
+                        DartScore = dartScore,
+
+                        PenaltyScore = penaltyScore,
+
+                        FinalScore = reliabilityScore
+                    },
+
                     ImpactScore = impactScore
                 });
             }
 
             double totalImpactScore = scoredArticles.Sum(article => article.ImpactScore);
-            double averageReliabilityScore = scoredArticles.Count == 0 ? 0 : scoredArticles.Average(article => article.ReliabilityScore);
+            double averageReliabilityScore = scoredArticles.Count == 0 ? 0 : scoredArticles.Average(article => article.Reliability.FinalScore);
 
             return new OverallAnalysisResult
             {

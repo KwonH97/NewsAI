@@ -169,7 +169,7 @@ namespace NewsAI_Project
             Label score = new Label
             {
                 Text =
-        $"신뢰도 : {article.ReliabilityScore}점 | 영향도 : {article.Analysis.PriceImpactScore}점\n" +
+        $"신뢰도 : {article.Reliability.FinalScore}점 | 영향도 : {article.Analysis.PriceImpactScore}점\n" +
         $"판단 : {ToKoreanDirection(article.Analysis.ImpactDirection)} | 강도 : {ToKoreanStrength(article.Analysis.ImpactStrength)}\n" +
         $"시장 반응 : {ToReactionText(article.Analysis.MarketReactionSpeed)}\n" +
         $"영향 범위 : {ToImpactRangeText(article.Analysis.MarketImpactRange)}",
@@ -189,7 +189,7 @@ namespace NewsAI_Project
 
             Label detail = new Label
             {
-                Text = $"점수 근거: 출처 {article.SourceScore}, 공식성 {article.OfficialityScore}, 구체성 {article.SpecificityScore}, 중복확인 {article.DuplicateScore}, 감점 {article.PenaltyScore}",
+                Text = $"점수 근거: 출처 {article.Reliability.SourceScore}, 공식성 {article.Reliability.OfficialityScore}, 구체성 {article.Reliability.SpecificityScore}, 중복확인 {article.Reliability.DuplicateScore}, 감점 {article.Reliability.PenaltyScore}",
                 Font = new Font("맑은 고딕", 8, FontStyle.Regular),
                 Location = new Point(10, 195),
                 AutoSize = true
