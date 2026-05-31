@@ -56,5 +56,10 @@ namespace NewsAI_Project.Models
 
         // 분석 근거
         public string Reason { get; set; } = "";
+        public string EventType { get; set; } = "";
+        public List<string> EventKeywords { get; set; }
+            = new List<string>();
+        public List<string> KeyEntities { get; set; }
+            = new List<string>();
     }
 }
