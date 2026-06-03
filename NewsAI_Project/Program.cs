@@ -36,5 +36,11 @@ namespace NewsAI_Project
         public static string? NaverId { get; set; }
         public static string? NaverSecret { get; set; }
         public static string? DartKey { get; set; }
+
+        public static string SupabaseUrl =
+        "https://swwcetsfagpjlagjttyw.supabase.co";
+
+        public static string SupabaseKey =
+            "sb_publishable_jarYi82c3uYc3yAFMJ2ahg_NGCDu17H"; 
     }
 }

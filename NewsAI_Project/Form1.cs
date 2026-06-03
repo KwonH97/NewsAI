@@ -6,6 +6,12 @@ namespace NewsAI_Project
 {
     public partial class Form1 : Form
     {
+
+        private readonly SupabaseProvider _supabaseProvider =
+                                                new SupabaseProvider();
+
+        private bool _isSearching = false;
+
         [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
         private static extern IntPtr CreateRoundRectRgn(
             int nLeftRect,
@@ -23,6 +29,10 @@ namespace NewsAI_Project
 
         private async Task SearchNaverNews(string stockName)
         {
+            lstStocks.Items.Clear();
+            lstStocks.Visible = false;
+            lstStocks.SendToBack();
+
             try
             {
 
@@ -296,6 +306,11 @@ namespace NewsAI_Project
         {
             AlignControls();
 
+            pnlResults.Width = 900;
+            pnlResults.Height = 560;
+            pnlResults.Left = (ClientSize.Width - pnlResults.Width) / 2;
+            pnlResults.Top = pnlSearchBg.Bottom + 20;
+
             pnlSearchBg.Left = (ClientSize.Width - pnlSearchBg.Width) / 2;
             pnlSearchBg.Top = (ClientSize.Height - pnlSearchBg.Height) / 2 - 50;
 
@@ -312,6 +327,36 @@ namespace NewsAI_Project
             pnlSearchBg.BackColor = Color.White;
 
             pnlSearchBg.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, pnlSearchBg.Width, pnlSearchBg.Height, 25, 25));
+
+            pnlSearchBg.Left =
+    (ClientSize.Width - pnlSearchBg.Width) / 2;
+
+            pnlSearchBg.Top =
+                (ClientSize.Height - pnlSearchBg.Height) / 2 - 50;
+
+            lblTitle.Left =
+                (ClientSize.Width - lblTitle.Width) / 2;
+
+            lblTitle.Top =
+                pnlSearchBg.Top - 50;
+
+            lstStocks.Left = pnlSearchBg.Left;
+            lstStocks.Top = pnlSearchBg.Bottom + 2;
+
+            lstStocks.Width = pnlSearchBg.Width;
+            lstStocks.Height = 120;
+
+            lstStocks.Visible = false;
+
+            pnlSearchBg.Region =
+                Region.FromHrgn(
+                    CreateRoundRectRgn(
+                        0,
+                        0,
+                        pnlSearchBg.Width,
+                        pnlSearchBg.Height,
+                        25,
+                        25));
         }
 
         private void AlignControls()
@@ -329,18 +374,113 @@ namespace NewsAI_Project
             {
                 e.SuppressKeyPress = true;
 
+                lstStocks.Items.Clear();
+                lstStocks.Visible = false;
+                lstStocks.SendToBack();
+
                 lblTitle.Top = 50;
                 pnlSearchBg.Top = 110;
                 pnlResults.Top = pnlSearchBg.Bottom + 30;
 
-                string stockName = txtStockSearch.Text.Trim();
+                lstStocks.Left = pnlSearchBg.Left;
+                lstStocks.Top = pnlSearchBg.Bottom + 2;
+
+                string stockName =
+                    txtStockSearch.Text.Trim();
 
                 if (!string.IsNullOrEmpty(stockName))
                 {
-                    pnlResults.BringToFront();
+                    _isSearching = true;
+
                     await SearchNaverNews(stockName);
+
+                    txtStockSearch.SelectionStart =
+                        txtStockSearch.Text.Length;
+
+                    lstStocks.Items.Clear();
+                    lstStocks.Visible = false;
+                    lstStocks.SendToBack();
+
+                    _isSearching = false;
                 }
             }
+        }
+
+        private async void txtStockSearch_TextChanged(object? sender, EventArgs e)
+        {
+
+            if (_isSearching)
+                return;
+
+            string keyword =
+        txtStockSearch.Text.Trim();
+
+            if (keyword.Length < 2)
+            {
+                lstStocks.Visible = false;
+                return;
+            }
+
+            try
+            {
+                var stocks =
+                    await _supabaseProvider
+                        .SearchStocksAsync(keyword);
+
+                if (_isSearching)
+                    return;
+
+                lstStocks.Items.Clear();
+
+                foreach (var stock in stocks)
+                {
+                    lstStocks.Items.Add(stock);
+                }
+
+               
+
+                if (!_isSearching)
+                {
+                    lstStocks.Visible =
+                        stocks.Count > 0;
+                }
+
+                lstStocks.BringToFront();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "검색 오류");
+            }
+        }
+
+        private async void lstStocks_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (lstStocks.SelectedItem == null)
+                return;
+
+            _isSearching = true;
+
+            string stockName =
+                lstStocks.SelectedItem.ToString()!;
+
+            txtStockSearch.Text = stockName;
+
+            lstStocks.Items.Clear();
+            lstStocks.Visible = false;
+            lstStocks.SendToBack();
+
+            lblTitle.Top = 50;
+            pnlSearchBg.Top = 110;
+            pnlResults.Top = pnlSearchBg.Bottom + 30;
+
+            lstStocks.Left = pnlSearchBg.Left;
+            lstStocks.Top = pnlSearchBg.Bottom + 2;
+
+            await SearchNaverNews(stockName);
+
+            _isSearching = false;
         }
     }
 }
