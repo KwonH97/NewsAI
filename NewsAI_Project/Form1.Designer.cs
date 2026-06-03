@@ -32,6 +32,7 @@
             txtStockSearch = new TextBox();
             lblTitle = new Label();
             pnlResults = new FlowLayoutPanel();
+            lstStocks = new ListBox();
             pnlSearchBg.SuspendLayout();
             SuspendLayout();
             // 
@@ -57,6 +58,7 @@
             txtStockSearch.PlaceholderText = "종목명을 입력하세요";
             txtStockSearch.Size = new Size(580, 40);
             txtStockSearch.TabIndex = 0;
+            txtStockSearch.TextChanged += txtStockSearch_TextChanged;
             txtStockSearch.KeyDown += txtStockSearch_KeyDown;
             // 
             // lblTitle
@@ -83,11 +85,22 @@
             pnlResults.TabIndex = 3;
             pnlResults.WrapContents = false;
             // 
+            // lstStocks
+            // 
+            lstStocks.FormattingEnabled = true;
+            lstStocks.ItemHeight = 15;
+            lstStocks.Location = new Point(102, 144);
+            lstStocks.Name = "lstStocks";
+            lstStocks.Size = new Size(614, 124);
+            lstStocks.TabIndex = 4;
+            lstStocks.SelectedIndexChanged += lstStocks_SelectedIndexChanged;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1480, 810);
+            Controls.Add(lstStocks);
             Controls.Add(pnlResults);
             Controls.Add(lblTitle);
             Controls.Add(pnlSearchBg);
@@ -106,5 +119,6 @@
         private TextBox txtStockSearch;
         private Label lblTitle;
         private FlowLayoutPanel pnlResults;
+        private ListBox lstStocks;
     }
 }
