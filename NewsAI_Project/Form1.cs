@@ -6,11 +6,18 @@ namespace NewsAI_Project
 {
     public partial class Form1 : Form
     {
+        private List<StockInfo> _stocks = new();
 
         private readonly SupabaseProvider _supabaseProvider =
                                                 new SupabaseProvider();
 
+        private readonly KisProvider _kisProvider =
+        new KisProvider();
+
         private bool _isSearching = false;
+
+        private string _selectedStockCode = "";
+        private string _selectedMarketType = "";
 
         [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
         private static extern IntPtr CreateRoundRectRgn(
@@ -392,6 +399,28 @@ namespace NewsAI_Project
                 {
                     _isSearching = true;
 
+                    var selectedStock =
+                        _stocks.FirstOrDefault(
+                            x => x.StockName.Equals(
+                                stockName,
+                                StringComparison.OrdinalIgnoreCase));
+
+                    if (selectedStock == null)
+                    {
+                        MessageBox.Show(
+                            "정확한 종목명을 입력하거나\n자동완성 목록에서 선택해주세요.",
+                            "종목명 확인");
+
+                        _isSearching = false;
+                        return;
+                    }
+
+                    _selectedStockCode =
+                        selectedStock.StockCode;
+
+                    _selectedMarketType =
+                        selectedStock.MarketType;            
+
                     await SearchNaverNews(stockName);
 
                     txtStockSearch.SelectionStart =
@@ -423,26 +452,23 @@ namespace NewsAI_Project
 
             try
             {
-                var stocks =
-                    await _supabaseProvider
-                        .SearchStocksAsync(keyword);
+                _stocks =
+     await _supabaseProvider.SearchStocksAsync(keyword);
 
                 if (_isSearching)
                     return;
 
                 lstStocks.Items.Clear();
 
-                foreach (var stock in stocks)
+                foreach (var stock in _stocks)
                 {
                     lstStocks.Items.Add(stock);
                 }
 
-               
-
                 if (!_isSearching)
                 {
                     lstStocks.Visible =
-                        stocks.Count > 0;
+                        _stocks.Count > 0;
                 }
 
                 lstStocks.BringToFront();
@@ -462,8 +488,19 @@ namespace NewsAI_Project
 
             _isSearching = true;
 
+            StockInfo selectedStock = (StockInfo)lstStocks.SelectedItem;
+
             string stockName =
-                lstStocks.SelectedItem.ToString()!;
+        selectedStock.StockName;
+
+            string stockCode =
+                selectedStock.StockCode;
+
+            string marketType =
+                selectedStock.MarketType;
+
+            _selectedStockCode = stockCode;
+            _selectedMarketType = marketType;           
 
             txtStockSearch.Text = stockName;
 
