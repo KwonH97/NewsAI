@@ -1,9 +1,10 @@
-﻿using System;
+﻿using NewsAI_Project.Models;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
 
 namespace NewsAI_Project.Services
 {
@@ -24,21 +25,20 @@ namespace NewsAI_Project.Services
                 $"Bearer {Config.SupabaseKey}");
         }
 
-        public async Task<List<string>>
+        public async Task<List<StockInfo>>
             SearchStocksAsync(string keyword)
         {
-            List<string> result = new();
+            List<StockInfo> result = new();
 
             try
             {
                 string encodedKeyword =
-                    Uri.EscapeDataString(
-                        $"{keyword}%");
+                    Uri.EscapeDataString($"{keyword}%");
 
                 string url =
                     $"{Config.SupabaseUrl}/rest/v1/StockCodes" +
                     $"?stock_name=ilike.{encodedKeyword}" +
-                    $"&select=stock_name" +
+                    $"&select=stock_code,stock_name,market_type" +
                     $"&limit=20";
 
                 string json =
@@ -50,8 +50,17 @@ namespace NewsAI_Project.Services
                 foreach (var item in arr)
                 {
                     result.Add(
-                        item["stock_name"]?
-                        .ToString() ?? "");
+                        new StockInfo
+                        {
+                            StockCode =
+                                item["stock_code"]?.ToString() ?? "",
+
+                            StockName =
+                                item["stock_name"]?.ToString() ?? "",
+
+                            MarketType =
+                                item["market_type"]?.ToString() ?? ""
+                        });
                 }
             }
             catch

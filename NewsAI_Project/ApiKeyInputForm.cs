@@ -16,6 +16,9 @@ namespace NewsAI_Project
         public string? NaverId { get; private set; }
         public string? NaverSecret { get; private set; }
         public string? DartKey { get; private set; }
+        public string? KisAppKey { get; private set; }
+        public string? KisAppSecret { get; private set; }
+
 
         public ApiKeyInputForm()
         {
@@ -43,12 +46,13 @@ namespace NewsAI_Project
             this.NaverId = txtNaverId.Text.Trim();
             this.NaverSecret = txtNaverSecret.Text.Trim();
             this.DartKey = txtDartKey.Text.Trim();
+            this.KisAppKey = txtKisAppKey.Text.Trim();
+            this.KisAppSecret = txtKisAppSecret.Text.Trim();
+
 
             // 3. 결과 성공(OK)을 알리고 창 닫기
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
-
-        
     }
 }

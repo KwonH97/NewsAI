@@ -19,6 +19,8 @@ namespace NewsAI_Project
                     Config.NaverId = loginForm.NaverId;
                     Config.NaverSecret = loginForm.NaverSecret;
                     Config.DartKey = loginForm.DartKey;
+                    Config.KisAppKey = loginForm.KisAppKey;
+                    Config.KisAppSecret = loginForm.KisAppSecret;
 
                     Application.Run(new Form1());
                 }
@@ -41,6 +43,8 @@ namespace NewsAI_Project
         "https://swwcetsfagpjlagjttyw.supabase.co";
 
         public static string SupabaseKey =
-            "sb_publishable_jarYi82c3uYc3yAFMJ2ahg_NGCDu17H"; 
+            "sb_publishable_jarYi82c3uYc3yAFMJ2ahg_NGCDu17H";
+        public static string? KisAppKey { get; set; }
+        public static string? KisAppSecret { get; set; }
     }
 }
