@@ -1,5 +1,3 @@
-using System.Reflection.Metadata;
-
 namespace NewsAI_Project.Models
 {
     public class ArticleAnalysisResult
@@ -25,7 +23,7 @@ namespace NewsAI_Project.Models
         public string ImpactStrength { get; set; } = "weak";
 
         // 공식성 수준
-        // official / media / rumor / speculation
+        // official_disclosure / contract_or_earnings / company_quote / industry_forecast / analyst_forecast / speculation
         public string OfficialityLevel { get; set; } = "speculation";
 
         // 구체성 수준
@@ -48,13 +46,15 @@ namespace NewsAI_Project.Models
         public MarketImpactRange MarketImpactRange { get; set; }
               = MarketImpactRange.Company;
 
-        // 신뢰도 점수
-        public int ReliabilityScore { get; set; }
-
         // 예상 주가 영향도 점수
         public int PriceImpactScore { get; set; }
 
         // 분석 근거
         public string Reason { get; set; } = "";
+        public string EventType { get; set; } = "";
+        public List<string> EventKeywords { get; set; }
+            = new List<string>();
+        public List<string> KeyEntities { get; set; }
+            = new List<string>();
     }
 }

@@ -52,6 +52,11 @@ namespace NewsAI_Project.Services
             JObject json = JObject.Parse(responseBody);
             string modelText = json["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString() ?? "";
             string analysisJson = ExtractJsonObject(modelText);
+            
+            //Gemini Json Test
+            GeminiDebugForm debug = new GeminiDebugForm(modelText);
+            debug.ShowDialog();
+
             NewsAnalysisResult? result = JsonConvert.DeserializeObject<NewsAnalysisResult>(analysisJson);
 
             if (result == null)
@@ -65,195 +70,220 @@ namespace NewsAI_Project.Services
         private static string CreatePrompt(string newsContext)
         {
             return """
-You are a professional stock market news analysis assistant.
+            You are a professional stock market news analysis assistant.
 
-Use only the news articles provided below.
-Do not invent facts that are not explicitly mentioned in the articles.
+            Use only the news articles provided below.
+            Do not invent facts that are not explicitly mentioned in the articles.
 
-Analyze each article and determine:
+            Analyze each article and determine:
+            * summary
+            * claims
+            * claim keywords
+            * event type
+            * event keywords
+            * key entities
+            * stock impact direction
+            * stock impact strength
+            * officiality level
+            * specificity level
+            * market reaction speed
+            * market impact range
+            * expected stock price impact score
+            * hype expressions
+            * title/content mismatch
+            * reasoning
 
-* summary
-* claims
-* claim keywords
-* stock impact direction
-* stock impact strength
-* officiality level
-* specificity level
-* market reaction speed
-* market impact range
-* expected stock price impact score
-* hype expressions
-* title/content mismatch
-* reasoning
+            Write summary, claims, and reason in Korean.
+            eventKeywords should be Korean.
+            keyEntities should preserve original names as they appear in the article.
+            Return ONLY valid JSON.
+            Do not return markdown.
+            Do not return explanations.
+            Do not return comments.
 
-Write summary, claims and reason in Korean.
+            Definitions:
 
-Return ONLY valid JSON.
+            impactDirection
+            positive = 호재
+            negative = 악재
+            neutral = 중립
 
-Do not return markdown.
-Do not return explanations.
-Do not return comments.
+            impactStrength
+            strong = 매우 강한 영향
+            medium = 보통 영향
+            weak = 약한 영향
 
-Definitions:
+            marketReactionSpeed
+            Return EXACTLY one of:
+            Low
+            Medium
+            High
+            Critical
 
-impactDirection
+            Critical = 즉시 확인 필요
+            High = 장중 확인 필요
+            Medium = 오늘 중 확인
+            Low = 당장 볼 필요 없음
 
-positive = 호재
-negative = 악재
-neutral = 중립
+            marketImpactRange
+            Return EXACTLY one of:
+            Company
+            Sector
+            Market
 
-impactStrength
+            Company = 해당 기업만 영향
+            Sector = 업종 전체 영향
+            Market = 시장 전체 영향
 
-strong = 매우 강한 영향
-medium = 보통 영향
-weak = 약한 영향
+            priceImpactScore
+            0~20 = 주가 영향 거의 없음
+            21~40 = 약한 영향
+            41~60 = 보통 영향
+            61~80 = 강한 영향
+            81~100 = 매우 강한 영향
 
-marketReactionSpeed
+            Examples of high scores:
+            * 유상증자
+            * 감자
+            * 거래정지
+            * 상장폐지
+            * FDA 승인
+            * 대규모 수주
+            * 실적 쇼크
+            * 대규모 투자
+            * 핵심 기술 계약
 
-Return EXACTLY one of:
+            officialityLevel
+            official_disclosure = DART 공시
+            contract_or_earnings = 수주 또는 실적
+            company_quote = 회사 공식 발표
+            industry_forecast = 산업 전망
+            analyst_forecast = 증권사 전망
+            speculation = 추측성 기사
 
-Low
-Medium
-High
-Critical
+            EventType Definitions:
 
-Critical
-= 즉시 확인 필요
+            earnings:
+            financial results and earnings announcements
 
-High
-= 장중 확인 필요
+            contract:
+            supply contracts, orders, business agreements
 
-Medium
-= 오늘 중 확인
+            disclosure:
+            official regulatory filings and disclosures
 
-Low
-= 당장 볼 필요 없음
+            policy:
+            government policy or regulation
 
-marketImpactRange
+            product:
+            new product or technology announcements
 
-Return EXACTLY one of:
+            investment:
+            investment, expansion, facility construction
 
-Company
-Sector
-Market
+            lawsuit:
+            lawsuits, investigations, audits
 
-Company
-= 해당 기업만 영향
+            management:
+            executive changes, governance issues
 
-Sector
-= 업종 전체 영향
+            analyst_report:
+            brokerage opinions and target prices
 
-Market
-= 시장 전체 영향
+            market_trend:
+            industry-wide trends and market analysis
 
-priceImpactScore
+            rumor:
+            unverified claims or speculation
 
-0~20
-주가 영향 거의 없음
+            Choose the single most appropriate category.
+            If the article contains multiple event types,
+            choose the event that would most strongly
+            affect stock price movement.
 
-21~40
-약한 영향
+            Required JSON schema:
+            {
+              "overallSummary": "2-sentence Korean summary of the overall news flow",
+              "articles": [
+                {
+                  "articleIndex": 0,
+                  "summary": "Korean article summary",
+                  "claims": [
+                    "Korean core claim"
+                  ],
+                  "claimKeywords": [
+                    "삼성전자",
+                    "엔비디아",
+                    "HBM",
+                    "공급계약"
+                  ],
+                  "eventType": "contract",
+                  "eventKeywords": [
+                    "공급계약",
+                    "수주"
+                  ],
+                  "keyEntities": [
+                    "삼성전자",
+                    "엔비디아"
+                  ],
+                  "impactDirection": "positive | negative | neutral",
+                  "impactStrength": "strong | medium | weak",
+                  "officialityLevel": "official_disclosure | contract_or_earnings | company_quote | industry_forecast | analyst_forecast | speculation",
+                  "specificityLevel": "high | medium | low",
+                  "marketReactionSpeed": "Low | Medium | High | Critical",
+                  "marketImpactRange": "Company | Sector | Market",
+                  "priceImpactScore": 0,
+                  "hasHypeExpression": false,
+                  "titleContentMismatch": false,
+                  "reason": "판단 근거"
+                }
+              ]
+            }
 
-41~60
-보통 영향
+            claimKeywords Rules:
+            Extract 3~8 keywords representing the core factual claim of the article.
+            Use keywords useful for duplicate detection.
+            Do not return generic words.
 
-61~80
-강한 영향
+            Examples:
+            삼성전자 공급 계약:
+            ["삼성전자", "엔비디아", "HBM", "공급계약"]
 
-81~100
-매우 강한 영향
+            FDA 승인:
+            ["FDA", "승인", "신약"]
 
-Examples of high scores:
+            eventKeywords Rules:
+            Extract keywords that describe the event itself.
+            Do not return generic words.
 
-* 유상증자
-* 감자
-* 거래정지
-* 상장폐지
-* FDA 승인
-* 대규모 수주
-* 실적 쇼크
-* 대규모 투자
-* 핵심 기술 계약
+            Examples:
+            contract:
+            ["공급계약", "수주", "납품"]
 
-officialityLevel
+            earnings:
+            ["실적발표", "영업이익", "매출"]
 
-official_disclosure
-= DART 공시
+            policy:
+            ["규제", "정책", "지원"]
 
-contract_or_earnings
-= 수주 또는 실적
+            lawsuit:
+            ["소송", "조사", "검찰"]
 
-company_quote
-= 회사 공식 발표
+            keyEntities Rules:
+            Extract important entities appearing in the article.
+            Include:
+            - company names
+            - product names
+            - organization names
+            - person names
+            Do not include generic words.
 
-industry_forecast
-= 산업 전망
+            Examples:
+            ["삼성전자", "엔비디아", "HBM3E"]
 
-analyst_forecast
-= 증권사 전망
-
-speculation
-= 추측성 기사
-
-Required JSON schema:
-
-{
-"overallSummary": "전체 뉴스 흐름 요약",
-
-"articles": [
-{
-"articleIndex": 0,
-
-  "summary": "기사 요약",
-
-  "claims": [
-    "핵심 주장"
-  ],
-
-  "claimKeywords": [
-    "키워드"
-  ],
-
-  "impactDirection":
-  "positive | negative | neutral",
-
-  "impactStrength":
-  "strong | medium | weak",
-
-  "officialityLevel":
-  "official_disclosure | contract_or_earnings | company_quote | industry_forecast | analyst_forecast | speculation",
-
-  "specificityLevel":
-  "high | medium | low",
-
-  "marketReactionSpeed":
-  "Low | Medium | High | Critical",
-
-  "marketImpactRange":
-  "Company | Sector | Market",
-
-  "priceImpactScore":
-  0,
-
-  "hasHypeExpression":
-  false,
-
-  "titleContentMismatch":
-  false,
-
-  "reason":
-  "판단 근거"
-}
-
-]
-}
-
-News list:
-
-""" + newsContext;
+            News list:
+            """ + newsContext;
         }
-
-
 
         private static string CreateNewsContext(List<NewsItem> newsItems)
         {
