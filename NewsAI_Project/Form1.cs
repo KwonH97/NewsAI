@@ -1,6 +1,7 @@
 using NewsAI_Project.Models;
 using NewsAI_Project.Services;
 using System.Runtime.InteropServices;
+using System.Net;
 
 namespace NewsAI_Project
 {
@@ -18,6 +19,8 @@ namespace NewsAI_Project
 
         private string _selectedStockCode = "";
         private string _selectedMarketType = "";
+
+        private StockPriceInfo? _stockPrice;
 
         [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
         private static extern IntPtr CreateRoundRectRgn(
@@ -44,8 +47,8 @@ namespace NewsAI_Project
             {
 
 
-                pnlResults.Controls.Clear();
-                pnlResults.Controls.Add(CreateTextPanel("분석 중입니다. 뉴스를 수집하고 기사 신뢰도를 계산하고 있습니다.", 70));
+                flowTrust.Controls.Clear();
+                flowTrust.Controls.Add(CreateTextPanel("분석 중입니다. 뉴스를 수집하고 기사 신뢰도를 계산하고 있습니다.", 70));
 
                 NaverNewsProvider naverNewsProvider = new NaverNewsProvider(Config.NaverId ?? "", Config.NaverSecret ?? "");
                 GeminiAnalysisService geminiAnalysisService = new GeminiAnalysisService(Config.GeminiKey ?? "");
@@ -55,8 +58,8 @@ namespace NewsAI_Project
 
                 if (newsItems.Count == 0)
                 {
-                    pnlResults.Controls.Clear();
-                    pnlResults.Controls.Add(CreateTextPanel("검색된 뉴스가 없습니다.", 70));
+                    flowTrust.Controls.Clear();
+                    flowTrust.Controls.Add(CreateTextPanel("검색된 뉴스가 없습니다.", 70));
                     return;
                 }
 
@@ -96,159 +99,150 @@ namespace NewsAI_Project
 
         private void ShowAnalysisResult(OverallAnalysisResult result)
         {
-            pnlResults.Controls.Clear();
-            pnlResults.AutoScroll = true;
-
-            pnlResults.Controls.Add(CreateSummaryPanel(result));
+            // 신뢰도 탭
+            flowTrust.Controls.Clear();
 
             foreach (ScoredArticleResult article in result.Articles)
             {
-                pnlResults.Controls.Add(CreateArticlePanel(article));
+                flowTrust.Controls.Add(
+                    CreateTrustPanel(article));
+            }
+
+            // 중요도 탭
+            flowImpact.Controls.Clear();
+
+            foreach (ScoredArticleResult article in result.Articles)
+            {
+                flowImpact.Controls.Add(
+                    CreateImpactPanel(article));
             }
         }
 
-        private Panel CreateSummaryPanel(OverallAnalysisResult result)
+        private Panel CreateTrustPanel(
+    ScoredArticleResult article)
         {
             Panel panel = new Panel
             {
-                Width = pnlResults.Width - 40,
-                Height = 130,
+                Width = flowTrust.Width - 30,
+                Height = 90,
                 BorderStyle = BorderStyle.FixedSingle,
-                BackColor = Color.FromArgb(235, 242, 255),
-                Margin = new Padding(10)
-            };
-
-            Label title = new Label
-            {
-                Text = $"종합 판단: {result.Decision}",
-                Font = new Font("맑은 고딕", 13, FontStyle.Bold),
-                Location = new Point(12, 10),
-                AutoSize = true
-            };
-
-            Label score = new Label
-            {
-                Text = $"총 영향 점수: {result.TotalImpactScore:F1} / 평균 신뢰도: {result.AverageReliabilityScore:F1}점",
-                Font = new Font("맑은 고딕", 10, FontStyle.Regular),
-                Location = new Point(12, 45),
-                AutoSize = true
-            };
-
-            Label summary = new Label
-            {
-                Text = string.IsNullOrWhiteSpace(result.Summary) ? "전체 요약이 없습니다." : result.Summary,
-                Font = new Font("맑은 고딕", 9, FontStyle.Regular),
-                Location = new Point(12, 75),
-                Size = new Size(panel.Width - 24, 45),
-                AutoEllipsis = true
-            };
-
-            panel.Controls.Add(title);
-            panel.Controls.Add(score);
-            panel.Controls.Add(summary);
-
-            return panel;
-        }
-
-        private Panel CreateArticlePanel(ScoredArticleResult article)
-        {
-            Panel panel = new Panel
-            {
-                Width = pnlResults.Width - 40,
-                Height = 320,
-                BorderStyle = BorderStyle.FixedSingle,
-                BackColor = Color.FromArgb(245, 245, 245),
+                BackColor = Color.White,
                 Margin = new Padding(10)
             };
 
             Label title = new Label
             {
                 Text = article.NewsItem.Title,
-                Font = new Font("맑은 고딕", 11, FontStyle.Bold),
+                Font = new Font("맑은 고딕", 10, FontStyle.Bold),
                 ForeColor = Color.Blue,
-                Cursor = Cursors.Hand,
                 Location = new Point(10, 10),
-                AutoSize = true,
-                MaximumSize = new Size(panel.Width - 20, 0)
+                Size = new Size(panel.Width - 20, 30),
+
+                Cursor = Cursors.Hand
             };
+
             title.Click += (s, e) =>
             {
-                if (!string.IsNullOrEmpty(article.NewsItem.Link))
-                {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo
                     {
                         FileName = article.NewsItem.Link,
                         UseShellExecute = true
                     });
-                }
             };
 
-            Label score = new Label
+            Label trust = new Label
+            {
+                Text = $"신뢰도 : {article.ReliabilityScore}점",
+                Font = new Font("맑은 고딕", 10, FontStyle.Bold),
+                ForeColor = Color.DarkBlue,
+                Location = new Point(10, 45),
+                AutoSize = true
+            };
+
+            panel.Controls.Add(title);
+            panel.Controls.Add(trust);
+
+            return panel;
+        }
+
+        private Panel CreateImpactPanel(
+    ScoredArticleResult article)
+        {
+            Panel panel = new Panel
+            {
+                Width = flowImpact.Width - 40,
+                Height = 220,
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Color.White,
+                Margin = new Padding(10)
+            };
+
+            Label title = new Label
+            {
+                Text = article.NewsItem.Title,
+                Font = new Font("맑은 고딕", 10, FontStyle.Bold),
+                ForeColor = Color.Blue,
+                Location = new Point(10, 10),
+                Size = new Size(panel.Width - 20, 35),
+                Cursor = Cursors.Hand
+            };
+
+            title.Click += (s, e) =>
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = article.NewsItem.Link,
+                        UseShellExecute = true
+                    });
+            };
+
+            Label impact = new Label
             {
                 Text =
-        $"신뢰도 : {article.Reliability.FinalScore}점 | 영향도 : {article.Analysis.PriceImpactScore}점\n" +
-        $"판단 : {ToKoreanDirection(article.Analysis.ImpactDirection)} | 강도 : {ToKoreanStrength(article.Analysis.ImpactStrength)}\n" +
-        $"시장 반응 : {ToReactionText(article.Analysis.MarketReactionSpeed)}\n" +
-        $"영향 범위 : {ToImpactRangeText(article.Analysis.MarketImpactRange)}",
+                    $"영향도 : {article.Analysis.PriceImpactScore}점",
+                Font = new Font("맑은 고딕", 10, FontStyle.Bold),
+                ForeColor = Color.Red,
+                Location = new Point(10, 55),
+                AutoSize = true
+            };
 
-                Font = new Font("맑은 고딕", 9, FontStyle.Bold),
-                Location = new Point(10, 48),
-                Size = new Size(panel.Width - 20, 80)
+            Label info = new Label
+            {
+                Text =
+                    $"판단 : {ToKoreanDirection(article.Analysis.ImpactDirection)}\n" +
+                    $"긴급성 : {ToReactionText(article.Analysis.MarketReactionSpeed)}\n" +
+                    $"영향 범위 : {ToImpactRangeText(article.Analysis.MarketImpactRange)}",
+                Font = new Font("맑은 고딕", 9),
+                Location = new Point(10, 85),
+                Size = new Size(panel.Width - 20, 70)
             };
 
             Label reason = new Label
             {
-                Text = "AI 판단 이유 : " + article.Analysis.Reason,
-                Font = new Font("맑은 고딕", 8, FontStyle.Italic),
-                Location = new Point(10, 140),
-                Size = new Size(panel.Width - 20, 40)
-            };
-
-            Label detail = new Label
-            {
-                Text = $"점수 근거: 출처 {article.Reliability.SourceScore}, 공식성 {article.Reliability.OfficialityScore}, 구체성 {article.Reliability.SpecificityScore}, 중복확인 {article.Reliability.DuplicateScore}, 감점 {article.Reliability.PenaltyScore}",
-                Font = new Font("맑은 고딕", 8, FontStyle.Regular),
-                Location = new Point(10, 195),
-                AutoSize = true
-            };
-
-            Label summary = new Label
-            {
-                Text = "요약: " + article.Analysis.Summary,
-                Font = new Font("맑은 고딕", 9, FontStyle.Regular),
-                Location = new Point(10, 220),
-                Size = new Size(panel.Width - 20, 38),
-                AutoEllipsis = true
-            };
-
-            string claimsText = article.Analysis.Claims.Count == 0
-                ? "핵심 주장: 없음"
-                : "핵심 주장: " + string.Join(", ", article.Analysis.Claims.Take(3));
-
-            Label claims = new Label
-            {
-                Text = claimsText,
-                Font = new Font("맑은 고딕", 8, FontStyle.Regular),
-                Location = new Point(10, 265),
-                Size = new Size(panel.Width - 20, 25),
-                AutoEllipsis = true
+                Text =
+                    "AI 판단 이유 : " +
+                    article.Analysis.Reason,
+                Font = new Font("맑은 고딕", 9),
+                Location = new Point(10, 160),
+                Size = new Size(panel.Width - 20, 45)
             };
 
             panel.Controls.Add(title);
-            panel.Controls.Add(score);
+            panel.Controls.Add(impact);
+            panel.Controls.Add(info);
             panel.Controls.Add(reason);
-            panel.Controls.Add(detail);
-            panel.Controls.Add(summary);
-            panel.Controls.Add(claims);
 
             return panel;
         }
+
 
         private Panel CreateTextPanel(string text, int height)
         {
             Panel panel = new Panel
             {
-                Width = pnlResults.Width - 40,
+                Width = flowTrust.Width - 40,
                 Height = height,
                 BorderStyle = BorderStyle.FixedSingle,
                 BackColor = Color.FromArgb(245, 245, 245),
@@ -258,14 +252,17 @@ namespace NewsAI_Project
             Label label = new Label
             {
                 Text = text,
-                Font = new Font("맑은 고딕", 10, FontStyle.Regular),
+                Font = new Font("맑은 고딕", 10),
                 Location = new Point(12, 18),
                 AutoSize = true
             };
 
             panel.Controls.Add(label);
+
             return panel;
         }
+
+       
 
         private static string ToKoreanDirection(string direction)
         {
@@ -277,15 +274,6 @@ namespace NewsAI_Project
             };
         }
 
-        private static string ToKoreanStrength(string strength)
-        {
-            return strength.Trim().ToLowerInvariant() switch
-            {
-                "strong" => "강함",
-                "medium" => "보통",
-                _ => "약함"
-            };
-        }
 
         private static string ToReactionText(MarketReactionSpeed speed)
         {
@@ -313,10 +301,10 @@ namespace NewsAI_Project
         {
             AlignControls();
 
-            pnlResults.Width = 900;
-            pnlResults.Height = 560;
-            pnlResults.Left = (ClientSize.Width - pnlResults.Width) / 2;
-            pnlResults.Top = pnlSearchBg.Bottom + 20;
+            tabMain.Width = 900;
+            tabMain.Height = 560;
+            tabMain.Left = (ClientSize.Width - tabMain.Width) / 2;
+            tabMain.Top = pnlSearchBg.Bottom + 20;
 
             pnlSearchBg.Left = (ClientSize.Width - pnlSearchBg.Width) / 2;
             pnlSearchBg.Top = (ClientSize.Height - pnlSearchBg.Height) / 2 - 50;
@@ -324,10 +312,7 @@ namespace NewsAI_Project
             lblTitle.Left = (ClientSize.Width - lblTitle.Width) / 2;
             lblTitle.Top = pnlSearchBg.Top - 50;
 
-            pnlResults.Width = 900;
-            pnlResults.Height = 560;
-            pnlResults.Left = (ClientSize.Width - pnlResults.Width) / 2;
-            pnlResults.Top = pnlSearchBg.Bottom + 20;
+            
 
             lblTitle.Visible = true;
             lblTitle.BringToFront();
@@ -364,6 +349,24 @@ namespace NewsAI_Project
                         pnlSearchBg.Height,
                         25,
                         25));
+            tabMain.Visible = false;
+
+            tabMain.Width = 900;
+            tabMain.Height = 560;
+
+            tabMain.Left =
+                (ClientSize.Width - tabMain.Width) / 2;
+
+            tabMain.Top =
+                pnlSearchBg.Bottom + 30;
+
+            picChart.Left = 20;
+            picChart.Top = 170;
+
+            picChart.Width = tabChart.Width - 40;
+            picChart.Height = 300;
+
+            lstStocks.BringToFront();
         }
 
         private void AlignControls()
@@ -387,7 +390,10 @@ namespace NewsAI_Project
 
                 lblTitle.Top = 50;
                 pnlSearchBg.Top = 110;
-                pnlResults.Top = pnlSearchBg.Bottom + 30;
+                tabMain.Top =
+     pnlSearchBg.Bottom + 30;
+
+                tabMain.Visible = true;
 
                 lstStocks.Left = pnlSearchBg.Left;
                 lstStocks.Top = pnlSearchBg.Bottom + 2;
@@ -419,9 +425,40 @@ namespace NewsAI_Project
                         selectedStock.StockCode;
 
                     _selectedMarketType =
-                        selectedStock.MarketType;            
+                        selectedStock.MarketType;
 
                     await SearchNaverNews(stockName);
+
+                    _stockPrice =
+                        await _kisProvider
+                            .GetCurrentPriceAsync(_selectedStockCode);
+
+                    await LoadChartAsync(_selectedStockCode);
+
+                    if (_stockPrice != null)
+                    {
+                        int currentPrice =
+                            int.Parse(_stockPrice.CurrentPrice);
+
+                        int volume =
+                            int.Parse(_stockPrice.Volume);
+
+                        int high52Week =
+                            int.Parse(_stockPrice.High52Week);
+
+                        lblCurrentPrice.Text =
+                            $"현재가 : {currentPrice:N0}원";
+
+                        lblChangeRate.Text =
+                            $"등락률 : {_stockPrice.ChangeRate}%";
+
+                        lblVolume.Text =
+                            $"거래량 : {volume:N0}";
+
+                        lbl52WeekHigh.Text =
+                            $"52주 최고가 : {high52Week:N0}원";
+                    }
+
 
                     txtStockSearch.SelectionStart =
                         txtStockSearch.Text.Length;
@@ -481,43 +518,101 @@ namespace NewsAI_Project
             }
         }
 
-        private async void lstStocks_SelectedIndexChanged(object? sender, EventArgs e)
+        private async void lstStocks_SelectedIndexChanged(
+    object? sender,
+    EventArgs e)
         {
+            lblTitle.Top = 50;
+
+            pnlSearchBg.Top = 110;
+
+            tabMain.Top =
+                pnlSearchBg.Bottom + 30;
+
+            tabMain.Visible = true;
+
             if (lstStocks.SelectedItem == null)
                 return;
 
-            _isSearching = true;
+            try
+            {
+                _isSearching = true;
 
-            StockInfo selectedStock = (StockInfo)lstStocks.SelectedItem;
+                StockInfo selectedStock =
+                    (StockInfo)lstStocks.SelectedItem;
 
-            string stockName =
-        selectedStock.StockName;
+                string stockName =
+                    selectedStock.StockName;
 
-            string stockCode =
-                selectedStock.StockCode;
+                txtStockSearch.Text = stockName;
 
-            string marketType =
-                selectedStock.MarketType;
+                string stockCode =
+                    selectedStock.StockCode;
 
-            _selectedStockCode = stockCode;
-            _selectedMarketType = marketType;           
+                await SearchNaverNews(stockName);
 
-            txtStockSearch.Text = stockName;
+                _stockPrice =
+                    await _kisProvider
+                        .GetCurrentPriceAsync(stockCode);
 
-            lstStocks.Items.Clear();
-            lstStocks.Visible = false;
-            lstStocks.SendToBack();
+                await LoadChartAsync(stockCode);
 
-            lblTitle.Top = 50;
-            pnlSearchBg.Top = 110;
-            pnlResults.Top = pnlSearchBg.Bottom + 30;
+                if (_stockPrice != null)
+                {
+                    int currentPrice =
+                        int.Parse(_stockPrice.CurrentPrice);
 
-            lstStocks.Left = pnlSearchBg.Left;
-            lstStocks.Top = pnlSearchBg.Bottom + 2;
+                    int volume =
+                        int.Parse(_stockPrice.Volume);
 
-            await SearchNaverNews(stockName);
+                    int high52Week =
+                        int.Parse(_stockPrice.High52Week);
 
-            _isSearching = false;
+                    lblCurrentPrice.Text =
+                        $"현재가 : {currentPrice:N0}원";
+
+                    lblChangeRate.Text =
+                        $"등락률 : {_stockPrice.ChangeRate}%";
+
+                    lblVolume.Text =
+                        $"거래량 : {volume:N0}";
+
+                    lbl52WeekHigh.Text =
+                        $"52주 최고가 : {high52Week:N0}원";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+            finally
+            {
+                _isSearching = false;
+            }
+        }
+
+        private async Task LoadChartAsync(string stockCode)
+        {
+            try
+            {
+                string url =
+                    $"https://ssl.pstatic.net/imgfinance/chart/item/area/day/{stockCode}.png";
+
+                using HttpClient client = new();
+
+                byte[] bytes =
+                    await client.GetByteArrayAsync(url);
+
+                using MemoryStream ms =
+                    new MemoryStream(bytes);
+
+                picChart.Image =
+                    Image.FromStream(ms);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
         }
     }
 }
