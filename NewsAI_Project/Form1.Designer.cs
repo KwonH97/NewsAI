@@ -31,24 +31,9 @@
             pnlSearchBg = new Panel();
             txtStockSearch = new TextBox();
             lblTitle = new Label();
+            pnlResults = new FlowLayoutPanel();
             lstStocks = new ListBox();
-            tabMain = new TabControl();
-            tabTrust = new TabPage();
-            flowTrust = new FlowLayoutPanel();
-            tabImpact = new TabPage();
-            flowImpact = new FlowLayoutPanel();
-            tabChart = new TabPage();
-            picChart = new PictureBox();
-            lblChangeRate = new Label();
-            lbl52WeekHigh = new Label();
-            lblVolume = new Label();
-            lblCurrentPrice = new Label();
             pnlSearchBg.SuspendLayout();
-            tabMain.SuspendLayout();
-            tabTrust.SuspendLayout();
-            tabImpact.SuspendLayout();
-            tabChart.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)picChart).BeginInit();
             SuspendLayout();
             // 
             // pnlSearchBg
@@ -89,6 +74,17 @@
             lblTitle.TabIndex = 2;
             lblTitle.Text = "오늘의 궁금한 종목은?";
             // 
+            // pnlResults
+            // 
+            pnlResults.AutoScroll = true;
+            pnlResults.BackColor = Color.Transparent;
+            pnlResults.FlowDirection = FlowDirection.TopDown;
+            pnlResults.Location = new Point(109, 183);
+            pnlResults.Name = "pnlResults";
+            pnlResults.Size = new Size(600, 269);
+            pnlResults.TabIndex = 3;
+            pnlResults.WrapContents = false;
+            // 
             // lstStocks
             // 
             lstStocks.FormattingEnabled = true;
@@ -99,131 +95,13 @@
             lstStocks.TabIndex = 4;
             lstStocks.SelectedIndexChanged += lstStocks_SelectedIndexChanged;
             // 
-            // tabMain
-            // 
-            tabMain.Controls.Add(tabTrust);
-            tabMain.Controls.Add(tabImpact);
-            tabMain.Controls.Add(tabChart);
-            tabMain.ItemSize = new Size(100, 35);
-            tabMain.Location = new Point(102, 274);
-            tabMain.Name = "tabMain";
-            tabMain.SelectedIndex = 0;
-            tabMain.Size = new Size(602, 308);
-            tabMain.SizeMode = TabSizeMode.Fixed;
-            tabMain.TabIndex = 5;
-            // 
-            // tabTrust
-            // 
-            tabTrust.Controls.Add(flowTrust);
-            tabTrust.Location = new Point(4, 39);
-            tabTrust.Name = "tabTrust";
-            tabTrust.Padding = new Padding(3);
-            tabTrust.Size = new Size(594, 265);
-            tabTrust.TabIndex = 0;
-            tabTrust.Text = "신뢰도";
-            tabTrust.UseVisualStyleBackColor = true;
-            // 
-            // flowTrust
-            // 
-            flowTrust.AutoScroll = true;
-            flowTrust.Dock = DockStyle.Fill;
-            flowTrust.Location = new Point(3, 3);
-            flowTrust.Name = "flowTrust";
-            flowTrust.Size = new Size(588, 259);
-            flowTrust.TabIndex = 0;
-            // 
-            // tabImpact
-            // 
-            tabImpact.Controls.Add(flowImpact);
-            tabImpact.Location = new Point(4, 39);
-            tabImpact.Name = "tabImpact";
-            tabImpact.Padding = new Padding(3);
-            tabImpact.Size = new Size(594, 265);
-            tabImpact.TabIndex = 1;
-            tabImpact.Text = "중요도";
-            tabImpact.UseVisualStyleBackColor = true;
-            // 
-            // flowImpact
-            // 
-            flowImpact.AutoScroll = true;
-            flowImpact.Dock = DockStyle.Fill;
-            flowImpact.Location = new Point(3, 3);
-            flowImpact.Name = "flowImpact";
-            flowImpact.Size = new Size(588, 259);
-            flowImpact.TabIndex = 0;
-            // 
-            // tabChart
-            // 
-            tabChart.Controls.Add(picChart);
-            tabChart.Controls.Add(lblChangeRate);
-            tabChart.Controls.Add(lbl52WeekHigh);
-            tabChart.Controls.Add(lblVolume);
-            tabChart.Controls.Add(lblCurrentPrice);
-            tabChart.Location = new Point(4, 39);
-            tabChart.Name = "tabChart";
-            tabChart.Padding = new Padding(3);
-            tabChart.Size = new Size(594, 265);
-            tabChart.TabIndex = 2;
-            tabChart.Text = "차트";
-            tabChart.UseVisualStyleBackColor = true;
-            // 
-            // picChart
-            // 
-            picChart.Dock = DockStyle.Bottom;
-            picChart.Location = new Point(3, 143);
-            picChart.Name = "picChart";
-            picChart.Size = new Size(588, 119);
-            picChart.SizeMode = PictureBoxSizeMode.Zoom;
-            picChart.TabIndex = 5;
-            picChart.TabStop = false;
-            // 
-            // lblChangeRate
-            // 
-            lblChangeRate.AutoSize = true;
-            lblChangeRate.Font = new Font("맑은 고딕", 18F, FontStyle.Regular, GraphicsUnit.Point, 129);
-            lblChangeRate.Location = new Point(18, 44);
-            lblChangeRate.Name = "lblChangeRate";
-            lblChangeRate.Size = new Size(78, 32);
-            lblChangeRate.TabIndex = 4;
-            lblChangeRate.Text = "label5";
-            // 
-            // lbl52WeekHigh
-            // 
-            lbl52WeekHigh.AutoSize = true;
-            lbl52WeekHigh.Font = new Font("맑은 고딕", 18F, FontStyle.Regular, GraphicsUnit.Point, 129);
-            lbl52WeekHigh.Location = new Point(18, 108);
-            lbl52WeekHigh.Name = "lbl52WeekHigh";
-            lbl52WeekHigh.Size = new Size(78, 32);
-            lbl52WeekHigh.TabIndex = 3;
-            lbl52WeekHigh.Text = "label4";
-            // 
-            // lblVolume
-            // 
-            lblVolume.AutoSize = true;
-            lblVolume.Font = new Font("맑은 고딕", 18F, FontStyle.Regular, GraphicsUnit.Point, 129);
-            lblVolume.Location = new Point(18, 76);
-            lblVolume.Name = "lblVolume";
-            lblVolume.Size = new Size(78, 32);
-            lblVolume.TabIndex = 2;
-            lblVolume.Text = "label3";
-            // 
-            // lblCurrentPrice
-            // 
-            lblCurrentPrice.AutoSize = true;
-            lblCurrentPrice.Font = new Font("맑은 고딕", 18F, FontStyle.Regular, GraphicsUnit.Point, 129);
-            lblCurrentPrice.Location = new Point(18, 12);
-            lblCurrentPrice.Name = "lblCurrentPrice";
-            lblCurrentPrice.Size = new Size(78, 32);
-            lblCurrentPrice.TabIndex = 0;
-            lblCurrentPrice.Text = "label1";
-            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1480, 810);
-            Controls.Add(tabMain);
             Controls.Add(lstStocks);
+            Controls.Add(pnlResults);
             Controls.Add(lblTitle);
             Controls.Add(pnlSearchBg);
             Name = "Form1";
@@ -232,12 +110,6 @@
             Load += Form1_Load;
             pnlSearchBg.ResumeLayout(false);
             pnlSearchBg.PerformLayout();
-            tabMain.ResumeLayout(false);
-            tabTrust.ResumeLayout(false);
-            tabImpact.ResumeLayout(false);
-            tabChart.ResumeLayout(false);
-            tabChart.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)picChart).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -246,17 +118,7 @@
         private Panel pnlSearchBg;
         private TextBox txtStockSearch;
         private Label lblTitle;
+        private FlowLayoutPanel pnlResults;
         private ListBox lstStocks;
-        private TabControl tabMain;
-        private TabPage tabTrust;
-        private TabPage tabImpact;
-        private TabPage tabChart;
-        private FlowLayoutPanel flowTrust;
-        private FlowLayoutPanel flowImpact;
-        private Label lblChangeRate;
-        private Label lbl52WeekHigh;
-        private Label lblVolume;
-        private Label lblCurrentPrice;
-        private PictureBox picChart;
     }
 }
