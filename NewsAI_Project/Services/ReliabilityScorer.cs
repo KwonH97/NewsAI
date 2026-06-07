@@ -4,7 +4,10 @@ namespace NewsAI_Project.Services
 {
     public class ReliabilityScorer
     {
-        public OverallAnalysisResult Score(List<NewsItem> newsItems, NewsAnalysisResult analysisResult, List<DartDisclosure> disclosures)
+        public OverallAnalysisResult Score(
+            List<NewsItem> newsItems,
+            NewsAnalysisResult analysisResult,
+            List<DartDisclosure> disclosures)
         {
             Dictionary<string, int> keywordCounts = CountClaimKeywords(analysisResult.Articles);
             List<ScoredArticleResult> scoredArticles = new List<ScoredArticleResult>();
@@ -12,82 +15,52 @@ namespace NewsAI_Project.Services
             for (int i = 0; i < newsItems.Count; i++)
             {
                 ArticleAnalysisResult articleAnalysis =
-                    FindAnalysisForArticle(
-                        analysisResult.Articles,
-                        i);
+                    FindAnalysisForArticle(analysisResult.Articles, i);
 
-                int sourceScore =
-                    GetSourceScore(newsItems[i].SourceType);
+                int sourceScore = GetSourceScore(newsItems[i].SourceType);
+                int officialityScore = GetOfficialityScore(articleAnalysis.OfficialityLevel);
+                int specificityScore = GetSpecificityScore(articleAnalysis.SpecificityLevel);
+                int duplicateScore = GetDuplicateScore(articleAnalysis.ClaimKeywords, keywordCounts);
+                int penaltyScore = GetPenaltyScore(articleAnalysis);
+                int dartScore = GetDartScore(newsItems[i].Title, disclosures);
 
-                int officialityScore =
-                    GetOfficialityScore(
-                        articleAnalysis.OfficialityLevel);
-
-                int specificityScore =
-                    GetSpecificityScore(
-                        articleAnalysis.SpecificityLevel);
-
-                int duplicateScore =
-                    GetDuplicateScore(
-                        articleAnalysis.ClaimKeywords,
-                        keywordCounts);
-
-                int penaltyScore =
-                    GetPenaltyScore(articleAnalysis);
-
-                int dartScore =
-                    GetDartScore(
-                        newsItems[i].Title,
-                        disclosures);
-
-
-                int reliabilityScore =
-                    Clamp(
-                        sourceScore +
-                        officialityScore +
-                        specificityScore +
-                        duplicateScore +
-                        dartScore -
-                        penaltyScore,
-                        0,
-                        100);
+                int reliabilityScore = Clamp(
+                    sourceScore +
+                    officialityScore +
+                    specificityScore +
+                    duplicateScore +
+                    dartScore -
+                    penaltyScore,
+                    0,
+                    100);
 
                 double impactScore =
                     reliabilityScore *
-                    GetDirectionMultiplier(
-                        articleAnalysis.ImpactDirection) *
-                    GetStrengthMultiplier(
-                        articleAnalysis.ImpactStrength);
+                    GetDirectionMultiplier(articleAnalysis.ImpactDirection) *
+                    GetStrengthMultiplier(articleAnalysis.ImpactStrength);
 
                 scoredArticles.Add(new ScoredArticleResult
                 {
                     NewsItem = newsItems[i],
-
                     Analysis = articleAnalysis,
-
                     Reliability = new ReliabilityBreakdown
                     {
                         SourceScore = sourceScore,
-
                         OfficialityScore = officialityScore,
-
                         SpecificityScore = specificityScore,
-
                         DuplicateScore = duplicateScore,
-
                         DartScore = dartScore,
-
                         PenaltyScore = penaltyScore,
-
                         FinalScore = reliabilityScore
                     },
-
                     ImpactScore = impactScore
                 });
             }
 
             double totalImpactScore = scoredArticles.Sum(article => article.ImpactScore);
-            double averageReliabilityScore = scoredArticles.Count == 0 ? 0 : scoredArticles.Average(article => article.Reliability.FinalScore);
+            double averageReliabilityScore = scoredArticles.Count == 0
+                ? 0
+                : scoredArticles.Average(article => article.Reliability.FinalScore);
 
             return new OverallAnalysisResult
             {
@@ -99,13 +72,19 @@ namespace NewsAI_Project.Services
             };
         }
 
-        private static Dictionary<string, int> CountClaimKeywords(List<ArticleAnalysisResult> articles)
+        private static Dictionary<string, int> CountClaimKeywords(
+            List<ArticleAnalysisResult> articles)
         {
             Dictionary<string, int> counts = new Dictionary<string, int>();
 
             foreach (ArticleAnalysisResult article in articles)
             {
-                foreach (string keyword in article.ClaimKeywords.Select(NormalizeKeyword).Where(keyword => keyword.Length > 0).Distinct())
+                IEnumerable<string> keywords = article.ClaimKeywords
+                    .Select(NormalizeKeyword)
+                    .Where(keyword => keyword.Length > 0)
+                    .Distinct();
+
+                foreach (string keyword in keywords)
                 {
                     counts[keyword] = counts.GetValueOrDefault(keyword) + 1;
                 }
@@ -114,30 +93,29 @@ namespace NewsAI_Project.Services
             return counts;
         }
 
-        private static ArticleAnalysisResult FindAnalysisForArticle(List<ArticleAnalysisResult> articles, int articleIndex)
+        private static ArticleAnalysisResult FindAnalysisForArticle(
+            List<ArticleAnalysisResult> articles,
+            int articleIndex)
         {
             return articles.FirstOrDefault(article => article.ArticleIndex == articleIndex)
-                ?? new ArticleAnalysisResult { ArticleIndex = articleIndex, Summary = "AI 분석 결과가 없습니다." };
+                ?? new ArticleAnalysisResult
+                {
+                    ArticleIndex = articleIndex,
+                    Summary = "AI 분석 결과가 없습니다."
+                };
         }
 
         private static int GetSourceScore(NewsSourceType sourceType)
         {
             return sourceType switch
             {
-                NewsSourceType.Disclosure => 40,          // DART
-
-                NewsSourceType.FinancialAuthority => 35,  // 금융감독원
-
-                NewsSourceType.EconomicNews => 30,        // 경제지
-
-                NewsSourceType.CompanyOfficial => 25,     // 기업 IR
-
-                NewsSourceType.News => 20,                // 일반 뉴스
-
+                NewsSourceType.Disclosure => 40,
+                NewsSourceType.FinancialAuthority => 35,
+                NewsSourceType.EconomicNews => 30,
+                NewsSourceType.CompanyOfficial => 25,
+                NewsSourceType.News => 20,
                 NewsSourceType.Blog => 5,
-
                 NewsSourceType.Community => 5,
-
                 _ => 5
             };
         }
@@ -166,7 +144,9 @@ namespace NewsAI_Project.Services
             };
         }
 
-        private static int GetDuplicateScore(List<string> claimKeywords, Dictionary<string, int> keywordCounts)
+        private static int GetDuplicateScore(
+            List<string> claimKeywords,
+            Dictionary<string, int> keywordCounts)
         {
             int maxCount = claimKeywords
                 .Select(NormalizeKeyword)
@@ -180,12 +160,7 @@ namespace NewsAI_Project.Services
                 return 15;
             }
 
-            if (maxCount == 2)
-            {
-                return 8;
-            }
-
-            return 0;
+            return maxCount == 2 ? 8 : 0;
         }
 
         private static int GetPenaltyScore(ArticleAnalysisResult articleAnalysis)
@@ -251,57 +226,57 @@ namespace NewsAI_Project.Services
             return "판단 보류";
         }
 
+        private static int GetDartScore(
+            string newsTitle,
+            List<DartDisclosure> disclosures)
+        {
+            string title = newsTitle.ToLowerInvariant();
 
+            foreach (DartDisclosure disclosure in disclosures)
+            {
+                string report = disclosure.ReportName.ToLowerInvariant();
+
+                if (title.Contains("자사주") && report.Contains("자기주식"))
+                {
+                    return 20;
+                }
+
+                if (ContainsAny(title, "실적", "영업이익", "매출") &&
+                    ContainsAny(report, "사업보고서", "반기보고서", "분기보고서", "매출액또는손익구조"))
+                {
+                    return 20;
+                }
+
+                if (ContainsAny(title, "계약", "수주") &&
+                    ContainsAny(report, "공급계약", "단일판매"))
+                {
+                    return 20;
+                }
+
+                if (ContainsAny(title, "투자", "시설투자") &&
+                    ContainsAny(report, "신규시설투자", "투자판단"))
+                {
+                    return 20;
+                }
+
+                if (ContainsAny(title, "증자", "유상증자") &&
+                    report.Contains("유상증자"))
+                {
+                    return 20;
+                }
+            }
+
+            return 0;
+        }
+
+        private static bool ContainsAny(string text, params string[] keywords)
+        {
+            return keywords.Any(text.Contains);
+        }
 
         private static int Clamp(int value, int min, int max)
         {
             return Math.Min(max, Math.Max(min, value));
-        }
-
-        private static int GetDartScore(
-    string newsTitle,
-    List<DartDisclosure> disclosures)
-        {
-            string title =
-                newsTitle.ToLower();
-
-            foreach (var disclosure in disclosures)
-            {
-                string report =
-                    disclosure.ReportName.ToLower();
-                
-
-                // 자사주
-                if (title.Contains("자사주") &&
-                    report.Contains("자기주식"))
-                    return 20;
-
-                // 실적
-                if ((title.Contains("실적") ||
-                     title.Contains("영업이익") ||
-                     title.Contains("매출")) &&
-                    (report.Contains("사업보고서") ||
-                     report.Contains("반기보고서") ||
-                     report.Contains("분기보고서")))
-                    return 20;
-
-                // 공급계약
-                if (title.Contains("계약") &&
-                    report.Contains("공급계약"))
-                    return 20;
-
-                // 투자
-                if (title.Contains("투자") &&
-                    report.Contains("투자"))
-                    return 20;
-
-                // 증자
-                if (title.Contains("증자") &&
-                    report.Contains("유상증자"))
-                    return 20;
-            }
-
-            return 0;
         }
 
         private static string NormalizeKeyword(string? value)

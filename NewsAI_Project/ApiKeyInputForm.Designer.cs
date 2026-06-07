@@ -45,7 +45,7 @@
             // 
             // txtGeminiKey
             // 
-            txtGeminiKey.Font = new Font("맑은 고딕", 20F);
+            txtGeminiKey.Font = new Font("맑은 고딕", 15F);
             txtGeminiKey.Location = new Point(146, 35);
             txtGeminiKey.Multiline = true;
             txtGeminiKey.Name = "txtGeminiKey";
@@ -54,7 +54,7 @@
             // 
             // txtNaverId
             // 
-            txtNaverId.Font = new Font("맑은 고딕", 20F);
+            txtNaverId.Font = new Font("맑은 고딕", 15F);
             txtNaverId.Location = new Point(146, 95);
             txtNaverId.Multiline = true;
             txtNaverId.Name = "txtNaverId";
@@ -63,7 +63,7 @@
             // 
             // txtNaverSecret
             // 
-            txtNaverSecret.Font = new Font("맑은 고딕", 20F);
+            txtNaverSecret.Font = new Font("맑은 고딕", 15F);
             txtNaverSecret.Location = new Point(146, 165);
             txtNaverSecret.Multiline = true;
             txtNaverSecret.Name = "txtNaverSecret";
@@ -118,7 +118,7 @@
             // 
             // txtDartKey
             // 
-            txtDartKey.Font = new Font("맑은 고딕", 20F);
+            txtDartKey.Font = new Font("맑은 고딕", 15F);
             txtDartKey.Location = new Point(146, 233);
             txtDartKey.Multiline = true;
             txtDartKey.Name = "txtDartKey";
@@ -145,7 +145,7 @@
             // 
             // txtKisAppKey
             // 
-            txtKisAppKey.Font = new Font("맑은 고딕", 20F);
+            txtKisAppKey.Font = new Font("맑은 고딕", 15F);
             txtKisAppKey.Location = new Point(146, 296);
             txtKisAppKey.Multiline = true;
             txtKisAppKey.Name = "txtKisAppKey";
@@ -154,7 +154,7 @@
             // 
             // txtKisAppSecret
             // 
-            txtKisAppSecret.Font = new Font("맑은 고딕", 20F);
+            txtKisAppSecret.Font = new Font("맑은 고딕", 15F);
             txtKisAppSecret.Location = new Point(146, 354);
             txtKisAppSecret.Multiline = true;
             txtKisAppSecret.Name = "txtKisAppSecret";

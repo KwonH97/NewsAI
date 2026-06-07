@@ -21,12 +21,15 @@ namespace NewsAI_Project.Services
                 if (string.IsNullOrWhiteSpace(corpCode))
                     return result;
 
+                string beginDate = DateTime.Today.AddYears(-1).ToString("yyyyMMdd");
+                string endDate = DateTime.Today.ToString("yyyyMMdd");
+
                 string url =
                     $"https://opendart.fss.or.kr/api/list.json" +
                     $"?crtfc_key={_apiKey}" +
                     $"&corp_code={corpCode}" +
-                    $"&bgn_de=20240101" +
-                    $"&end_de=20251231" +
+                    $"&bgn_de={beginDate}" +
+                    $"&end_de={endDate}" +
                     $"&last_reprt_at=Y" +
                     $"&page_count=20";
 
