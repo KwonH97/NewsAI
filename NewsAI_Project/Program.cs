@@ -8,41 +8,31 @@ namespace NewsAI_Project
         [STAThread]
         static void Main()
         {
-            try
-            {
-                ApplicationConfiguration.Initialize();
+            ApplicationConfiguration.Initialize();
 
-                using (var loginForm = new ApiKeyInputForm())
+            using (var loginForm = new ApiKeyInputForm())
+            {
+                if (loginForm.ShowDialog() == DialogResult.OK)
                 {
-                    if (loginForm.ShowDialog() == DialogResult.OK)
-                    {
-                        Config.GeminiKey = loginForm.GeminiKey;
-                        Config.NaverId = loginForm.NaverId;
-                        Config.NaverSecret = loginForm.NaverSecret;
-                        Config.DartKey = loginForm.DartKey;
-                        Config.KisAppKey = loginForm.KisAppKey;
-                        Config.KisAppSecret = loginForm.KisAppSecret;
+                    // 입력받은 API 키를 실행 중 메모리에만 저장합니다.
+                    Config.GeminiKey = loginForm.GeminiKey;
+                    Config.NaverId = loginForm.NaverId;
+                    Config.NaverSecret = loginForm.NaverSecret;
+                    Config.DartKey = loginForm.DartKey;
+                    Config.KisAppKey = loginForm.KisAppKey;
+                    Config.KisAppSecret = loginForm.KisAppSecret;
 
-                        Application.Run(new Form1());
-                    }
-                    else
-                    {
-                        Application.Exit();
-                    }
+                    Application.Run(new Form1());
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    ex.ToString(),
-                    "오류 발생",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                else
+                {
+                    Application.Exit();
+                }
             }
         }
     }
 
-        public static class Config
+    public static class Config
     {
         public static string? GeminiKey { get; set; }
         public static string? NaverId { get; set; }
