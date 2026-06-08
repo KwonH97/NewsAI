@@ -97,6 +97,7 @@
             lstStocks.Name = "lstStocks";
             lstStocks.Size = new Size(614, 124);
             lstStocks.TabIndex = 4;
+            lstStocks.Visible = false;
             lstStocks.SelectedIndexChanged += lstStocks_SelectedIndexChanged;
             // 
             // tabMain
