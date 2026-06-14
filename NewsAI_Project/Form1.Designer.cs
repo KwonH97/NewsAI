@@ -38,7 +38,7 @@
             tabImpact = new TabPage();
             flowImpact = new FlowLayoutPanel();
             tabChart = new TabPage();
-            picChart = new PictureBox();
+            formsPlotChart = new ScottPlot.WinForms.FormsPlot();
             lblChangeRate = new Label();
             lbl52WeekHigh = new Label();
             lblVolume = new Label();
@@ -48,7 +48,6 @@
             tabTrust.SuspendLayout();
             tabImpact.SuspendLayout();
             tabChart.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)picChart).BeginInit();
             SuspendLayout();
             // 
             // pnlSearchBg
@@ -154,7 +153,7 @@
             // 
             // tabChart
             // 
-            tabChart.Controls.Add(picChart);
+            tabChart.Controls.Add(formsPlotChart);
             tabChart.Controls.Add(lblChangeRate);
             tabChart.Controls.Add(lbl52WeekHigh);
             tabChart.Controls.Add(lblVolume);
@@ -167,15 +166,13 @@
             tabChart.Text = "차트";
             tabChart.UseVisualStyleBackColor = true;
             // 
-            // picChart
+            // formsPlotChart
             // 
-            picChart.Dock = DockStyle.Bottom;
-            picChart.Location = new Point(3, 143);
-            picChart.Name = "picChart";
-            picChart.Size = new Size(588, 119);
-            picChart.SizeMode = PictureBoxSizeMode.Zoom;
-            picChart.TabIndex = 5;
-            picChart.TabStop = false;
+            formsPlotChart.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            formsPlotChart.Location = new Point(-1, 143);
+            formsPlotChart.Name = "formsPlotChart";
+            formsPlotChart.Size = new Size(594, 122);
+            formsPlotChart.TabIndex = 5;
             // 
             // lblChangeRate
             // 
@@ -237,7 +234,6 @@
             tabImpact.ResumeLayout(false);
             tabChart.ResumeLayout(false);
             tabChart.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)picChart).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -257,6 +253,6 @@
         private Label lbl52WeekHigh;
         private Label lblVolume;
         private Label lblCurrentPrice;
-        private PictureBox picChart;
+        private ScottPlot.WinForms.FormsPlot formsPlotChart;
     }
 }

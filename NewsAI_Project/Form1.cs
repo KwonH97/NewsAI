@@ -429,8 +429,6 @@ namespace NewsAI_Project
             flowTrust.WrapContents = false;
             flowImpact.FlowDirection = FlowDirection.TopDown;
             flowImpact.WrapContents = false;
-            picChart.Dock = DockStyle.None;
-            picChart.SizeMode = PictureBoxSizeMode.StretchImage;
 
             lblCurrentPrice.Text = "현재가: -";
             lblChangeRate.Text = "등락률: -";
@@ -481,11 +479,6 @@ namespace NewsAI_Project
             lblChangeRate.Location = new Point(Math.Max(260, tabChart.ClientSize.Width / 2), 16);
             lblVolume.Location = new Point(20, 52);
             lbl52WeekHigh.Location = new Point(Math.Max(260, tabChart.ClientSize.Width / 2), 52);
-
-            picChart.Left = 20;
-            picChart.Top = 95;
-            picChart.Width = Math.Max(300, tabChart.ClientSize.Width - 40);
-            picChart.Height = Math.Max(220, tabChart.ClientSize.Height - picChart.Top - 20);
 
             pnlSearchBg.Region = Region.FromHrgn(
                 CreateRoundRectRgn(
@@ -638,13 +631,64 @@ namespace NewsAI_Project
                     _stockPrice = await _kisProvider.GetCurrentPriceAsync(
                         _selectedStockCode);
                     ShowStockPrice(_stockPrice);
+
+                    List<DailyPrice> prices =
+                    await _kisProvider.GetDailyPricesAsync(
+                        _selectedStockCode);
+
+                    var orderedPrices =
+                        prices.OrderBy(x => x.Date).ToList();
+
+                    formsPlotChart.Plot.Clear();
+
+                    var candles =
+                        orderedPrices
+                        .Select((x, i) =>
+                            new ScottPlot.OHLC(
+                                (double)x.Open,
+                                (double)x.High,
+                                (double)x.Low,
+                                (double)x.Close,
+                                DateTime.FromOADate(i),
+                                TimeSpan.FromDays(1)))
+                        .ToArray();
+                    
+                    formsPlotChart.Plot.Add.Candlestick(candles);
+
+                    double[] positions =
+                        Enumerable.Range(0, orderedPrices.Count)
+                        .Where(i => i % 7 == 0)
+                        .Select(i => (double)i)
+                        .ToArray();
+
+                    string[] labels =
+                        orderedPrices
+                        .Where((x, i) => i % 7 == 0)
+                        .Select(x =>
+                        {
+                            if (x.Date.Month == 1 &&
+                                x.Date.Day <= 7)
+                            {
+                                return x.Date.ToString("yyyy-MM-dd");
+                            }
+
+                            return x.Date.ToString("MM-dd");
+                        })
+                        .ToArray();
+
+                    formsPlotChart.Plot.Axes.Bottom.SetTicks(
+                        positions,
+                        labels);
+
+                    formsPlotChart.Plot.Axes.AutoScale();
+                    formsPlotChart.Refresh();
+
                 }
                 else
                 {
                     ShowStockPrice(null);
                 }
 
-                await LoadChartAsync(_selectedStockCode);
             }
             catch (Exception ex)
             {
@@ -722,32 +766,8 @@ namespace NewsAI_Project
 
             return Color.Black;
         }
-
-        private async Task LoadChartAsync(string stockCode)
-        {
-            try
-            {
-                string url =
-                    $"https://ssl.pstatic.net/imgfinance/chart/item/candle/week/{stockCode}.png";
-
-                using HttpClient client = new();
-                byte[] bytes = await client.GetByteArrayAsync(url);
-                using MemoryStream stream = new(bytes);
-                using Image downloadedImage = Image.FromStream(stream);
-
-                Image? previousImage = picChart.Image;
-                picChart.Image = new Bitmap(downloadedImage);
-                previousImage?.Dispose();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    "차트를 불러오지 못했습니다.\n\n" + ex.Message,
-                    "차트 오류",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-            }
-        }
+        
+        
 
         private void HideStockSuggestions()
         {

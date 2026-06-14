@@ -60,9 +60,87 @@ namespace NewsAI_Project.Services
 
             return _accessToken;
         }
+        public async Task<List<DailyPrice>> GetDailyPricesAsync(string stockCode)
+        {
+            string token =
+                await GetAccessTokenAsync();
 
-        public async Task<StockPriceInfo?>
-    GetCurrentPriceAsync(string stockCode)
+            using HttpClient client = new();
+
+            client.DefaultRequestHeaders.Add(
+                "authorization",
+                $"Bearer {token}");
+
+            client.DefaultRequestHeaders.Add(
+                "appkey",
+                Config.KisAppKey);
+
+            client.DefaultRequestHeaders.Add(
+                "appsecret",
+                Config.KisAppSecret);
+
+            client.DefaultRequestHeaders.Add(
+                "tr_id",
+                "FHKST03010100");
+
+            string url =
+            $"{BaseUrl}" +
+            "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice" +
+            $"?fid_cond_mrkt_div_code=J" +
+            $"&fid_input_iscd={stockCode}" +
+            $"&fid_input_date_1=20240101" +
+            $"&fid_input_date_2={DateTime.Now:yyyyMMdd}" +
+            $"&fid_period_div_code=D" +
+            $"&fid_org_adj_prc=1";
+
+            string json =
+                await client.GetStringAsync(url);
+
+            JObject obj =
+                JObject.Parse(json);
+
+            List<DailyPrice> prices = new();
+
+            if (obj["output2"] == null)
+            {
+                return prices;
+            }
+
+            foreach (JObject item in obj["output2"]!)
+            {
+                prices.Add(new DailyPrice
+                {
+                    Date =
+                        DateTime.ParseExact(
+                            item["stck_bsop_date"]?.ToString() ?? "",
+                            "yyyyMMdd",
+                            null),
+
+                    Open =
+                        decimal.Parse(
+                            item["stck_oprc"]?.ToString() ?? "0"),
+
+                    High =
+                        decimal.Parse(
+                            item["stck_hgpr"]?.ToString() ?? "0"),
+
+                    Low =
+                        decimal.Parse(
+                            item["stck_lwpr"]?.ToString() ?? "0"),
+
+                    Close =
+                        decimal.Parse(
+                            item["stck_clpr"]?.ToString() ?? "0"),
+
+                    Volume =
+                        long.Parse(
+                            item["acml_vol"]?.ToString() ?? "0")
+                });
+            }
+
+            return prices;
+        }
+        public async Task<StockPriceInfo?> GetCurrentPriceAsync(string stockCode)
         {
             string token =
                 await GetAccessTokenAsync();
@@ -86,14 +164,14 @@ namespace NewsAI_Project.Services
                 "FHKST01010100");
 
             string url =
-                $"https://openapivts.koreainvestment.com:29443" +
-                $"/uapi/domestic-stock/v1/quotations/inquire-price" +
-                $"?fid_cond_mrkt_div_code=J" +
+                $"{BaseUrl}" +
+                "/uapi/domestic-stock/v1/quotations/inquire-price" +
+                "?fid_cond_mrkt_div_code=J" +
                 $"&fid_input_iscd={stockCode}";
 
             string json =
-    await client.GetStringAsync(url);
-
+                await client.GetStringAsync(url);
+           
             JObject obj =
                 JObject.Parse(json);
 
