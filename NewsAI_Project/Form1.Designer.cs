@@ -58,21 +58,22 @@
             pnlSearchBg.Anchor = AnchorStyles.None;
             pnlSearchBg.BackColor = Color.White;
             pnlSearchBg.Controls.Add(txtStockSearch);
-            pnlSearchBg.Location = new Point(109, 68);
+            pnlSearchBg.Location = new Point(167, 68);
             pnlSearchBg.Name = "pnlSearchBg";
             pnlSearchBg.Padding = new Padding(10, 5, 10, 5);
-            pnlSearchBg.Size = new Size(600, 50);
+            pnlSearchBg.Size = new Size(442, 50);
             pnlSearchBg.TabIndex = 1;
             // 
             // txtStockSearch
             // 
             txtStockSearch.Anchor = AnchorStyles.None;
             txtStockSearch.BorderStyle = BorderStyle.None;
-            txtStockSearch.Font = new Font("맑은 고딕", 12F, FontStyle.Regular, GraphicsUnit.Point, 129);
-            txtStockSearch.Location = new Point(5, 5);
+            txtStockSearch.Font = new Font("맑은 고딕", 20F);
+            txtStockSearch.Location = new Point(0, 0);
+            txtStockSearch.Multiline = true;
             txtStockSearch.Name = "txtStockSearch";
             txtStockSearch.PlaceholderText = "종목명을 입력하세요";
-            txtStockSearch.Size = new Size(580, 22);
+            txtStockSearch.Size = new Size(442, 50);
             txtStockSearch.TabIndex = 0;
             txtStockSearch.TextChanged += txtStockSearch_TextChanged;
             txtStockSearch.KeyDown += txtStockSearch_KeyDown;
@@ -102,11 +103,12 @@
             // 
             // lstStocks
             // 
+            lstStocks.Font = new Font("맑은 고딕", 15F);
             lstStocks.FormattingEnabled = true;
-            lstStocks.ItemHeight = 15;
-            lstStocks.Location = new Point(102, 144);
+            lstStocks.ItemHeight = 28;
+            lstStocks.Location = new Point(167, 144);
             lstStocks.Name = "lstStocks";
-            lstStocks.Size = new Size(614, 124);
+            lstStocks.Size = new Size(442, 116);
             lstStocks.TabIndex = 4;
             lstStocks.Visible = false;
             lstStocks.SelectedIndexChanged += lstStocks_SelectedIndexChanged;
