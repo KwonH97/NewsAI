@@ -30,6 +30,7 @@
         {
             pnlSearchBg = new Panel();
             txtStockSearch = new TextBox();
+            btnHome = new Button();
             lblTitle = new Label();
             lstStocks = new ListBox();
             tabMain = new TabControl();
@@ -43,6 +44,8 @@
             lbl52WeekHigh = new Label();
             lblVolume = new Label();
             lblCurrentPrice = new Label();
+            flowPopularStocks = new FlowLayoutPanel();
+            lblPopularTitle = new Label();
             pnlSearchBg.SuspendLayout();
             tabMain.SuspendLayout();
             tabTrust.SuspendLayout();
@@ -66,14 +69,23 @@
             txtStockSearch.Anchor = AnchorStyles.None;
             txtStockSearch.BorderStyle = BorderStyle.None;
             txtStockSearch.Font = new Font("맑은 고딕", 12F, FontStyle.Regular, GraphicsUnit.Point, 129);
-            txtStockSearch.Location = new Point(10, 5);
-            txtStockSearch.Multiline = true;
+            txtStockSearch.Location = new Point(5, 5);
             txtStockSearch.Name = "txtStockSearch";
             txtStockSearch.PlaceholderText = "종목명을 입력하세요";
-            txtStockSearch.Size = new Size(580, 40);
+            txtStockSearch.Size = new Size(580, 22);
             txtStockSearch.TabIndex = 0;
             txtStockSearch.TextChanged += txtStockSearch_TextChanged;
             txtStockSearch.KeyDown += txtStockSearch_KeyDown;
+            // 
+            // btnHome
+            // 
+            btnHome.Location = new Point(736, 313);
+            btnHome.Name = "btnHome";
+            btnHome.Size = new Size(63, 38);
+            btnHome.TabIndex = 7;
+            btnHome.Text = "이전화면";
+            btnHome.UseVisualStyleBackColor = true;
+            btnHome.Click += btnHome_Click;
             // 
             // lblTitle
             // 
@@ -96,6 +108,7 @@
             lstStocks.Name = "lstStocks";
             lstStocks.Size = new Size(614, 124);
             lstStocks.TabIndex = 4;
+            lstStocks.Visible = false;
             lstStocks.SelectedIndexChanged += lstStocks_SelectedIndexChanged;
             // 
             // tabMain
@@ -214,11 +227,31 @@
             lblCurrentPrice.TabIndex = 0;
             lblCurrentPrice.Text = "label1";
             // 
+            // flowPopularStocks
+            // 
+            flowPopularStocks.Anchor = AnchorStyles.None;
+            flowPopularStocks.Location = new Point(756, 33);
+            flowPopularStocks.Name = "flowPopularStocks";
+            flowPopularStocks.Size = new Size(601, 252);
+            flowPopularStocks.TabIndex = 6;
+            // 
+            // lblPopularTitle
+            // 
+            lblPopularTitle.AutoSize = true;
+            lblPopularTitle.Font = new Font("맑은 고딕", 11.25F, FontStyle.Bold, GraphicsUnit.Point, 129);
+            lblPopularTitle.Location = new Point(0, 0);
+            lblPopularTitle.Name = "lblPopularTitle";
+            lblPopularTitle.Size = new Size(0, 20);
+            lblPopularTitle.TabIndex = 0;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1480, 810);
+            Controls.Add(btnHome);
+            Controls.Add(lblPopularTitle);
+            Controls.Add(flowPopularStocks);
             Controls.Add(tabMain);
             Controls.Add(lstStocks);
             Controls.Add(lblTitle);
@@ -254,5 +287,8 @@
         private Label lblVolume;
         private Label lblCurrentPrice;
         private ScottPlot.WinForms.FormsPlot formsPlotChart;
+        private FlowLayoutPanel flowPopularStocks;
+        private Label lblPopularTitle;
+        private Button btnHome;
     }
 }

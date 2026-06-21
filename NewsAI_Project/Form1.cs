@@ -35,10 +35,14 @@ namespace NewsAI_Project
         public Form1()
         {
             InitializeComponent();
+            lblPopularTitle.Visible = true;
+            flowPopularStocks.Visible = true;
         }
 
         private async Task SearchNaverNews(string stockName)
         {
+            lblPopularTitle.Visible = false;
+            flowPopularStocks.Visible = false;
             HideStockSuggestions();
 
             try
@@ -425,6 +429,13 @@ namespace NewsAI_Project
 
         private void Form1_Load(object sender, EventArgs e)
         {
+
+            btnHome.Visible = false;
+
+            btnHome.Size = new Size(70,50);
+
+           
+
             flowTrust.FlowDirection = FlowDirection.TopDown;
             flowTrust.WrapContents = false;
             flowImpact.FlowDirection = FlowDirection.TopDown;
@@ -436,7 +447,10 @@ namespace NewsAI_Project
             lbl52WeekHigh.Text = "52주 최고가: -";
 
             tabMain.Visible = false;
+
+            LoadPopularStocks();
             LayoutControls();
+
         }
 
         protected override void OnResize(EventArgs e)
@@ -456,11 +470,34 @@ namespace NewsAI_Project
             int contentWidth = Math.Min(1100, Math.Max(620, ClientSize.Width - 160));
             int contentHeight = Math.Max(360, ClientSize.Height - 260);
 
+            
+
             pnlSearchBg.Width = searchWidth;
             txtStockSearch.Width = pnlSearchBg.Width - 20;
 
             pnlSearchBg.Left = (ClientSize.Width - pnlSearchBg.Width) / 2;
             pnlSearchBg.Top = tabMain.Visible ? 110 : (ClientSize.Height - pnlSearchBg.Height) / 2 - 50;
+
+            btnHome.Location =
+     new Point(
+         pnlSearchBg.Right + 15,
+         pnlSearchBg.Top
+     );
+
+            lblPopularTitle.Left =
+     (ClientSize.Width - lblPopularTitle.Width) / 2;
+
+            lblPopularTitle.Top =
+                pnlSearchBg.Bottom + 60;
+
+            flowPopularStocks.Width = 400;
+            flowPopularStocks.Height = 180;
+
+            flowPopularStocks.Left =
+                (ClientSize.Width - flowPopularStocks.Width) / 2;
+
+            flowPopularStocks.Top =
+                lblPopularTitle.Bottom + 20;
 
             lblTitle.Left = (ClientSize.Width - lblTitle.Width) / 2;
             lblTitle.Top = pnlSearchBg.Top - 50;
@@ -652,7 +689,7 @@ namespace NewsAI_Project
                                 DateTime.FromOADate(i),
                                 TimeSpan.FromDays(1)))
                         .ToArray();
-                    
+
                     formsPlotChart.Plot.Add.Candlestick(candles);
 
                     double[] ma5 =
@@ -744,6 +781,7 @@ namespace NewsAI_Project
             {
                 _isSearching = false;
             }
+            btnHome.Visible = true;
         }
 
         private void ShowStockPrice(StockPriceInfo? stockPrice)
@@ -808,8 +846,8 @@ namespace NewsAI_Project
 
             return Color.Black;
         }
-        
-        
+
+
 
         private void HideStockSuggestions()
         {
@@ -817,9 +855,9 @@ namespace NewsAI_Project
             lstStocks.Visible = false;
             lstStocks.SendToBack();
         }
-        
+
         // 이동평균선
-        private double[] CalculateMA(List<DailyPrice> prices,int period)
+        private double[] CalculateMA(List<DailyPrice> prices, int period)
         {
             double[] result =
                 new double[prices.Count];
@@ -840,6 +878,119 @@ namespace NewsAI_Project
             }
 
             return result;
+        }
+        private void LoadPopularStocks()
+        {
+            try
+            {
+                flowPopularStocks.Controls.Clear();
+
+                lblPopularTitle.Text = "자주 검색하는 대표 종목";
+                lblPopularTitle.Font =
+    new Font("맑은 고딕", 13, FontStyle.Bold);
+                lblPopularTitle.Visible = true;
+                lblPopularTitle.BringToFront();
+
+                var stocks = new List<string>
+{
+    "삼성전자",
+    "SK하이닉스",
+    "NAVER",
+    "카카오",
+    "현대차",
+    "LG에너지솔루션",
+    "한화에어로스페이스",
+    "셀트리온",
+    "알테오젠",
+    "두산에너빌리티"
+};
+
+
+
+
+                foreach (string stock in stocks.Take(10))
+                {
+                    LinkLabel link = new LinkLabel();
+
+                    link.Text = stock;
+
+                    link.LinkColor = Color.Blue;
+                    link.ActiveLinkColor = Color.Red;
+                    link.VisitedLinkColor = Color.Blue;
+                    link.LinkBehavior = LinkBehavior.NeverUnderline;
+
+                    link.Cursor = Cursors.Hand;
+                    link.Width = 180;
+                    link.Height = 35;
+
+                    link.TextAlign =
+                        ContentAlignment.MiddleCenter;
+
+                    link.Font =
+                        new Font("맑은 고딕", 10, FontStyle.Bold);
+
+                    link.Click += async (s, e) =>
+                    {
+                        txtStockSearch.Text = stock;
+
+                        btnHome.Visible = true;
+
+                        var result =
+                            await _supabaseProvider.SearchStocksAsync(stock);
+
+                        StockInfo? selectedStock =
+                            result.FirstOrDefault(
+                                x => x.StockName == stock);
+
+                        if (selectedStock != null)
+                        {
+                            await AnalyzeSelectedStockAsync(selectedStock);
+                        }
+                    };
+
+
+                    flowPopularStocks.Controls.Add(link);
+
+
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "인기 종목 조회 오류");
+            }
+        }
+
+        private void btnHome_Click(object sender, EventArgs e)
+        {
+            ShowHomeScreen();
+
+            btnHome.Visible = false;
+        }
+        private void ShowHomeScreen()
+        {
+            txtStockSearch.Clear();
+
+            flowTrust.Controls.Clear();
+            flowImpact.Controls.Clear();
+
+            lblCurrentPrice.Text = "현재가: -";
+            lblChangeRate.Text = "등락률: -";
+            lblVolume.Text = "거래량: -";
+            lbl52WeekHigh.Text = "52주 최고가: -";
+
+            formsPlotChart.Plot.Clear();
+            formsPlotChart.Refresh();
+
+            lblPopularTitle.Visible = true;
+            flowPopularStocks.Visible = true;
+
+            lstStocks.Visible = false;
+
+            tabMain.Visible = false;
+
+            LayoutControls();
         }
     }
 }
