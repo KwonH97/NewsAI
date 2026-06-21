@@ -198,5 +198,69 @@ namespace NewsAI_Project.Services
                     output["w52_hgpr"]?.ToString() ?? ""
             };
         }
+        public async Task<List<string>> GetTopVolumeStocksAsync()
+        {
+            string token =
+                await GetAccessTokenAsync();
+
+            using HttpClient client = new();
+
+            client.DefaultRequestHeaders.Add(
+                "authorization",
+                $"Bearer {token}");
+
+            client.DefaultRequestHeaders.Add(
+                "appkey",
+                Config.KisAppKey);
+
+            client.DefaultRequestHeaders.Add(
+                "appsecret",
+                Config.KisAppSecret);
+
+            client.DefaultRequestHeaders.Add(
+                "tr_id",
+                "FHPST01710000");
+
+            string url =
+                $"{BaseUrl}" +
+                "/uapi/domestic-stock/v1/quotations/volume-rank" +
+                "?FID_COND_MRKT_DIV_CODE=J" +
+                "&FID_COND_SCR_DIV_CODE=20171" +
+                "&FID_INPUT_ISCD=0000" +
+                "&FID_DIV_CLS_CODE=0" +
+                "&FID_BLNG_CLS_CODE=0" +
+                "&FID_TRGT_CLS_CODE=111111111" +
+                "&FID_TRGT_EXLS_CLS_CODE=0000000000" +
+                "&FID_INPUT_PRICE_1=0" +
+                "&FID_INPUT_PRICE_2=0" +
+                "&FID_VOL_CNT=0" +
+                "&FID_INPUT_DATE_1=0";
+
+            string json =
+                await client.GetStringAsync(url);
+
+            JObject obj =
+                JObject.Parse(json);
+
+            List<string> stocks = new();
+
+            if (obj["output"] == null)
+            {
+                return stocks;
+            }
+
+            foreach (JObject item in obj["output"]!)
+            {
+                string name =
+                    item["hts_kor_isnm"]?.ToString() ?? "";
+
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    stocks.Add(name);
+                }
+            }
+
+            return stocks.Take(10).ToList();
+        }
     }
 }
