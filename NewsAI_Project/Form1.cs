@@ -692,6 +692,22 @@ namespace NewsAI_Project
 
                     formsPlotChart.Plot.Add.Candlestick(candles);
 
+                    double[] ma5 =
+                    CalculateMA(orderedPrices, 5);
+
+                    double[] ma20 =
+                        CalculateMA(orderedPrices, 20);
+
+                    double[] ma60 =
+                        CalculateMA(orderedPrices, 60);
+
+                    double[] ma120 =
+                        CalculateMA(orderedPrices, 120);
+
+                    double[] ma240 =
+                        CalculateMA(orderedPrices, 240);
+
+
                     double[] positions =
                         Enumerable.Range(0, orderedPrices.Count)
                         .Where(i => i % 7 == 0)
@@ -716,6 +732,32 @@ namespace NewsAI_Project
                     formsPlotChart.Plot.Axes.Bottom.SetTicks(
                         positions,
                         labels);
+
+                    double[] xs =
+                        Enumerable.Range(0, orderedPrices.Count)
+                        .Select(i => (double)i)
+                        .ToArray();
+
+                    var ma5Line =
+                        formsPlotChart.Plot.Add.Scatter(xs, ma5);
+
+                    var ma20Line =
+                        formsPlotChart.Plot.Add.Scatter(xs, ma20);
+
+                    var ma60Line =
+                        formsPlotChart.Plot.Add.Scatter(xs, ma60);
+
+                    var ma120Line =
+                        formsPlotChart.Plot.Add.Scatter(xs, ma120);
+
+                    var ma240Line =
+                        formsPlotChart.Plot.Add.Scatter(xs, ma240);
+
+                    ma5Line.Color = ScottPlot.Colors.Red;
+                    ma20Line.Color = ScottPlot.Colors.Orange;
+                    ma60Line.Color = ScottPlot.Colors.Green;
+                    ma120Line.Color = ScottPlot.Colors.Blue;
+                    ma240Line.Color = ScottPlot.Colors.Black;
 
                     formsPlotChart.Plot.Axes.AutoScale();
                     formsPlotChart.Refresh();
@@ -812,6 +854,30 @@ namespace NewsAI_Project
             lstStocks.Items.Clear();
             lstStocks.Visible = false;
             lstStocks.SendToBack();
+        }
+
+        // 이동평균선
+        private double[] CalculateMA(List<DailyPrice> prices, int period)
+        {
+            double[] result =
+                new double[prices.Count];
+
+            for (int i = 0; i < prices.Count; i++)
+            {
+                if (i < period - 1)
+                {
+                    result[i] = double.NaN;
+                    continue;
+                }
+
+                result[i] =
+                    prices
+                    .Skip(i - period + 1)
+                    .Take(period)
+                    .Average(x => (double)x.Close);
+            }
+
+            return result;
         }
         private void LoadPopularStocks()
         {

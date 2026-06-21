@@ -92,7 +92,7 @@ namespace NewsAI_Project.Services
             $"&fid_input_date_2={DateTime.Now:yyyyMMdd}" +
             $"&fid_period_div_code=D" +
             $"&fid_org_adj_prc=1";
-
+            
             string json =
                 await client.GetStringAsync(url);
 
@@ -137,7 +137,6 @@ namespace NewsAI_Project.Services
                             item["acml_vol"]?.ToString() ?? "0")
                 });
             }
-
             return prices;
         }
         public async Task<StockPriceInfo?> GetCurrentPriceAsync(string stockCode)
