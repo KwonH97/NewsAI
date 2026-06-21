@@ -213,34 +213,20 @@ namespace NewsAI_Project
                 AutoSize = true
             };
 
-            Label breakdown = new()
-            {
-                Text =
-                    $"출처 {article.Reliability.SourceScore} / " +
-                    $"공식성 {article.Reliability.OfficialityScore} / " +
-                    $"구체성 {article.Reliability.SpecificityScore} / " +
-                    $"중복 {article.Reliability.DuplicateScore} / " +
-                    $"DART {article.Reliability.DartScore} / " +
-                    $"감점 {article.Reliability.PenaltyScore}",
-                Font = new Font("맑은 고딕", 8),
-                Location = new Point(10, 76),
-                Size = new Size(panel.Width - 20, 25),
-                AutoEllipsis = true
-            };
-
             Label summary = new()
             {
                 Text = "요약: " + article.Analysis.Summary,
                 Font = new Font("맑은 고딕", 8),
-                Location = new Point(10, 104),
-                Size = new Size(panel.Width - 20, 84),
-                AutoEllipsis = true
+                Location = new Point(10, 70),
+                MaximumSize = new Size(panel.Width - 20, 0),
+                AutoSize = true
             };
 
             panel.Controls.Add(title);
             panel.Controls.Add(trust);
-            panel.Controls.Add(breakdown);
             panel.Controls.Add(summary);
+            int maxBottom = panel.Controls.Cast<Control>().Max(c => c.Bottom);
+            panel.Height = summary.Bottom + 20;
 
             return panel;
         }
@@ -279,7 +265,6 @@ namespace NewsAI_Project
                 Text =
                     $"판단: {ToKoreanDirection(article.Analysis.ImpactDirection)}\n" +
                     $"이벤트: {ToEventTypeText(article.Analysis.EventType)}\n" +
-                    $"반응 속도: {ToReactionText(article.Analysis.MarketReactionSpeed)}\n" +
                     $"영향 범위: {ToImpactRangeText(article.Analysis.MarketImpactRange)}",
                 Font = new Font("맑은 고딕", 9),
                 Location = new Point(10, 78),
@@ -387,6 +372,7 @@ namespace NewsAI_Project
             };
         }
 
+        /*
         private static string ToReactionText(MarketReactionSpeed speed)
         {
             return speed switch
@@ -397,6 +383,7 @@ namespace NewsAI_Project
                 _ => "당장 확인할 필요 없음"
             };
         }
+        */
 
         private static string ToImpactRangeText(MarketImpactRange range)
         {
@@ -434,12 +421,11 @@ namespace NewsAI_Project
 
             btnHome.Size = new Size(70,50);
 
-           
-
             flowTrust.FlowDirection = FlowDirection.TopDown;
             flowTrust.WrapContents = false;
             flowImpact.FlowDirection = FlowDirection.TopDown;
             flowImpact.WrapContents = false;
+            lstStocks.Visible = false;
 
             lblCurrentPrice.Text = "현재가: -";
             lblChangeRate.Text = "등락률: -";
@@ -466,14 +452,23 @@ namespace NewsAI_Project
                 return;
             }
 
-            int searchWidth = Math.Min(700, Math.Max(420, ClientSize.Width - 160));
+            int searchWidth = Math.Min(500, Math.Max(420, ClientSize.Width - 160));
             int contentWidth = Math.Min(1100, Math.Max(620, ClientSize.Width - 160));
             int contentHeight = Math.Max(360, ClientSize.Height - 260);
 
-            
+            txtStockSearch.Top = 0;
 
-            pnlSearchBg.Width = searchWidth;
-            txtStockSearch.Width = pnlSearchBg.Width - 20;
+            // 실제 입력창 크기
+            txtStockSearch.Width = searchWidth;
+            txtStockSearch.Height = 50;
+
+            // 뒤 배경 패널을 입력창보다 조금만 크게
+            pnlSearchBg.Width = txtStockSearch.Width + 10;
+            pnlSearchBg.Height = txtStockSearch.Height + 10;
+
+            // 가운데 정렬
+            txtStockSearch.Left = 5;
+            txtStockSearch.Top = 5;
 
             pnlSearchBg.Left = (ClientSize.Width - pnlSearchBg.Width) / 2;
             pnlSearchBg.Top = tabMain.Visible ? 110 : (ClientSize.Height - pnlSearchBg.Height) / 2 - 50;
@@ -503,9 +498,8 @@ namespace NewsAI_Project
             lblTitle.Top = pnlSearchBg.Top - 50;
 
             lstStocks.Left = pnlSearchBg.Left;
-            lstStocks.Top = pnlSearchBg.Bottom + 2;
+            lstStocks.Top = pnlSearchBg.Bottom + 6;
             lstStocks.Width = pnlSearchBg.Width;
-            lstStocks.Height = 120;
 
             tabMain.Width = contentWidth;
             tabMain.Height = contentHeight;
@@ -617,6 +611,15 @@ namespace NewsAI_Project
 
                 lstStocks.Visible = _stocks.Count > 0;
                 lstStocks.BringToFront();
+
+                int visibleCount = Math.Min(_stocks.Count, 8);
+
+                lstStocks.ItemHeight = 28;
+
+                lstStocks.Height =
+                    visibleCount * lstStocks.ItemHeight + 4;
+
+                lstStocks.Visible = _stocks.Count > 0;
             }
             catch (Exception ex)
             {
